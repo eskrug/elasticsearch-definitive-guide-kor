@@ -13,7 +13,7 @@ Geo-points cannot be automatically detected((("dynamic mapping", "geo-points and
 <<dynamic-mapping,dynamic mapping>>. Instead, `geo_point` fields should be
 mapped ((("mapping (types)", "geo-points")))explicitly:
 
-Geo-points 는 <<dynamic-mapping,dynamic mapping>> 을 통해서 자동으로 검출되지 않는다. ((("dynamic mapping", "geo-points and"))) 대신, 명시 적으로 `geo_point` 필드로 반드시 mapping 을((("mapping (types)", "geo-points"))) 해주어야 한다:
+Geo-points 는 <<dynamic-mapping,dynamic mapping>> 을 통해서 자동으로 검출(mapping) 되지 않는다. ((("dynamic mapping", "geo-points and"))) 대신, mapping 을 이용하여 type 을 `geo_point` 필드로 ((("mapping (types)", "geo-points"))) 명시적으로 지정을 해주어야 한다:
 
 
 [source,json]
