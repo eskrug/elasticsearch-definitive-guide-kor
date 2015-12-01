@@ -7,16 +7,10 @@
 현존하는 기술은 어떻게 warehouse에 데이터를 채워, 저장하고 구조화할 것인가에 집중되어 있다.
 실제로 그 데이터를 숙지하여, 실시간으로 의사 결정을 해야 할 때까지는 그것도 괜찮기는 했다.
 
-The world is swimming in data.  For years we have been simply overwhelmed by
-the quantity of data flowing through and produced by our systems.  Existing
-technology has focused on how to store and structure warehouses full of data.
-That's all well and good--until you actually need to make decisions in
-real time informed by that data.
 
-Elasticsearch is a distributed, scalable, real-time search and analytics engine.
-It enables you to search, analyze, and explore your data, often in ways that
-you did not anticipate at the start of a project.  It exists because raw data
-sitting on a hard drive is just not useful.
+Elasticsearch는 분산 확장 가능한 실시간 검색 및 분석 엔진이다.
+project 초반에 예상하지 못했던 방식으로, 데이터를 검색하고, 분석하고, 탐색해야 하는 경우가 있다.
+디스크에 있는 기본 데이터가 유용하지 않기 때문이다.
 
 Whether you need full-text search, real-time analytics of structured data, or
 a combination of the two, this book introduces you to the fundamental
