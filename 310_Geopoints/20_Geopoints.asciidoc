@@ -5,7 +5,7 @@ A _geo-point_ is a single latitude/longitude point on the Earth's surface.((("ge
 can be used to calculate distance from a point, to determine whether a point
 falls within a bounding box, or in aggregations.
 
-geo-point는 지구 표면에 하나의 위도-경도이다. 특정 지점이 경계 박스 내부나 집계에 있는지 여부를 결정하기 위해, 특정 지점에서의 거리를 계산하기 위해 사용될 수 있다.
+_geo-point_는 지구 표면에 하나의 위도-경도이다. ((("geo-points")))특정 지점이 경계 박스 내부나 집계에 있는지 여부를 결정하기 위해, 특정 지점에서의 거리를 계산하기 위해 사용될 수 있다.
 
 _geo-point_ 는 지구표면 위에 한 지점의 위도/경도 를 나타낸다. ((("geo-points"))) Geo-points 는 한 지점으로 부터 거리를 계산하기 위해 사용이 가능한데, 경계범위 위치의 안에 있는지 확인하거나, 그 수치를 집계할 때 사용할 수 있다.
 
