@@ -1,30 +1,15 @@
 [[aggs-high-level]]
 == 고수준의 개념
-== High-Level Concepts
 
 query DSL과 마찬가지로, aggregation은 구성이 가능한 문법을 가지고 있다. 필요한 사용자 정의 행위를 제공하기 위해, 독립적인 기능 단위를 혼합하고 맞출 수 있다. 이 말은 배워야 기본적인 개념은 조금이지만, 그러한 기본 구성 요소의 조합은 거의 무한하다는 것을 의미한다.
 
-Like the query DSL, ((("aggregations", "high-level concepts")))aggregations have a _composable_ syntax: independent units
-of functionality can be mixed and matched to provide the custom behavior that
-you need. This means that there are only a few basic concepts to learn, but
-nearly limitless combinations of those basic components.
-
 aggregation을 숙달하기 위해서는, 두 가지 주요 개념을 이해해야 한다.
-
-To master aggregations, you need to understand only two main concepts:
 
 _Buckets_:: 기준을 만족하는 document의 집합
 
-_Buckets_:: Collections of documents that meet a criterion
-
 _Metrics_:: bucket의 document에서 계산되는 통계
 
-_Metrics_:: Statistics calculated on the documents in a bucket
-
 그렇다. 모든 aggregation은 하나 이상의 bucket과, 0개 이상의 metric(통계)의 단순한 조합이다. SQL 용어로 설명해보자면, 아래와 같다.
-
-That's it!  Every aggregation is simply a combination of one or more buckets
-and zero or more metrics. To translate into rough SQL terms:
 
 [source,sql]
 --------------------------------------------------
@@ -34,89 +19,46 @@ GROUP BY color <2>
 --------------------------------------------------
 <1> COUNT(color)는 metric과 동일하다.
 
-<1> `COUNT(color)` is equivalent to a metric.
-
 <2> GROUP BY color는 bucket과 동일하다.
-
-<2> `GROUP BY color` is equivalent to a bucket.
 
 bucket은 SQL의 grouping과 개념적으로 유사하고, metric은 COUNT(), SUM(), MAX() 등과 유사하다.
 
-Buckets are conceptually similar to grouping in SQL, while metrics are similar
-to `COUNT()`, `SUM()`, `MAX()`, and so forth.
-
 이런 개념 모두를 파헤쳐보고, 필요로하는 것들은 무엇이 있는지 알아보자.
-
-Let's dig into both of these concepts((("aggregations", "high-level concepts", "buckets")))((("buckets"))) and see what they entail.
 
 [role="pagebreak-before"]
 === Buckets
 
 bucket은 어떤 기준을 만족시키는 document의 단순한 집합이다.
 
-A _bucket_ is simply a collection of documents that meet certain criteria:
-
 - 종업원은 남성(male)이나 여성(female) bucket에 포함된다.
-
-- An employee would land in either the _male_ or _female_ bucket.
 
 - 올버니(Albany)는 뉴욕(New York)주 bucket에 포함된다.
 
-- The city of Albany would land in the _New York_ state bucket.
-
 - “2014-10-28”이란 날짜는 10월(October) bucket에 포함된다.
 
-- The date 2014-10-28 would land within the _October_ bucket.
+aggregation이 실행되면, bucket의 기준에 일치하는지를 판단하기 위하여 각 document 내부의 값을 평가한다. 그 값이 일치하면, document는 bucket에 속하게 되고, aggregation가 계속된다.
 
-aggregation이 실행되면, 각 document가 bucket의 기준에 일치하는지를 판단하기 위하여, 각 document 내부의 값을 평가한다. 그 값이 일치하면, document는 bucket에 속하게 되고, 집계가 계속된다.
-As aggregations are executed, the values inside each document are evaluated to
-determine whether they match a bucket's criteria.  If they match, the document is placed
-inside the bucket and the aggregation continues.
+bucket은 계층적인 또는 조건부 분류 방식(partitioning scheme)을 제공하여, 다른 bucket 내부에 중첩될 수도 있다. 예를 들어, "신시내티(Cincinnati)"는 "오하이오(Ohio)" 주 bucket 내부에 배치되고, 전체 "오하이오(Ohio)" bucket은 "미국(USA)"이라는 bucket 내부에 배치된다.
 
-bucket은 계층적인 또는 조건부 분류 방식을 제공하여, 다른 bucket 내부에 중첩될 수도 있다. "신시내티(Cincinnati)"는 "오하이오(Ohio)"주 bucket 내부에 배치되고, 전체 "오하이오(Ohio)" bucket은 "미국(USA)"이라는 bucket 내부에 배치된다.
-Buckets can also be nested inside other buckets, giving you a hierarchy or
-conditional partitioning scheme.  For example, Cincinnati would be placed inside
-the Ohio state bucket, and the _entire_ Ohio bucket would be placed inside the
-USA country bucket.
-
-Elasticsearch는 여러 가지 방법(시간대 별로, 가장 인기 있는 단어 별로, 연령대별로, 지리적 위치 별로 등)으로 document를 분류할 수 있는, 다양한 bucket을 가지고 있다. 그러나, 기본적으로 그것들 모두는, 어떤 기준을 기반으로 document를 분류하는, 동일한 원칙으로 동작한다.
-Elasticsearch has a variety of buckets, which allow you to
-partition documents in many ways (by hour, by most-popular terms, by
-age ranges, by geographical location, and more).  But fundamentally they all operate
-on the same principle: partitioning documents based on criteria.
+Elasticsearch는 여러 가지 방법(시간대 별로, 가장 인기 있는 용어별로, 연령대 별로, 지리적 위치 별로 등)으로 document를 분류할 수 있는, 다양한 bucket을 가지고 있다. 그러나 기본적으로 그것들 모두는, 어떤 기준을 기반으로 document를 분류한다는 동일한 원칙으로 동작한다.
 
 === Metrics
-bucket은 유용한 부분집합으로 document를 분류한다. 그러나, 궁극적인 목표는, 각 bucket에 있는 해당 document에서 계산된, metric(통계)이다. bucket으로 분류하는 것은 마지막까지 수단이다. 관심 있는 metric을 계산할 수 있는 방법으로, document를 그룹화하는 방법을 제공한다.
-Buckets allow us to partition documents into useful subsets,((("aggregations", "high-level concepts", "metrics")))((("metrics"))) but ultimately what
-we want is some kind of metric calculated on those documents in each bucket.
-Bucketing is the means to an end: it provides a way to group documents in a way
-that you can calculate interesting metrics.
+bucket은 유용한 부분 집합으로 document를 분류한다. 그러나 궁극적인 목표는 각 bucket 안에 있는 document들로부터 계산된 metric이다. bucket으로 분류하는 것은 목적을 달성하기 위한 수단이다. document를 그룹화하는 방법을 제공하여, 관심 있는 metric들을 계산할 수 있다.
 
-대부분의 metric은, document의 값을 사용하여 계산되는, 단순한 수학적인 연산(min, max, sum 등)이다. 실용적인 측면에서, metric은 평균 급여, 최대 판매 가격, query 응답 시간의 95% 같은 수량을 계산할 수 있다.
-Most _metrics_ are simple mathematical operations (for example, min, mean, max, and sum)
-that are calculated using the document values.  In practical terms, metrics allow
-you to calculate quantities such as the average salary, or the maximum sale price,
-or the 95th percentile for query latency.
+대부분의 metric은 document의 값을 사용하여 계산되는, 단순한 수학적인 연산(min, max, sum 등)이다. 실용적인 측면에서, metric은 평균 급여, 최대 판매 가격, query 응답 시간의 95% 같은 수량을 계산할 수 있다.
 
 === Combining the Two
-집계는 bucket과 metric의 조합이다. 집계는 단일 bucket, 또는 단일 metric, 또는 각각 하나씩을 가질 수 있다. 다수의 bucket이 다른 bucket 내부에 중첩될 수 있다. 예를 들어, 속하는 국가에 따라(bucket) document를 분류하고, 국가별 평균 임금(metric)을 계산한다.
-An _aggregation_ is a combination of buckets and metrics.((("aggregations", "high-level concepts", "combining buckets and metrics")))((("buckets", "combining with metrics")))((("metrics", "combining with buckets")))  An aggregation may have
-a single bucket, or a single metric, or one of each.  It may even have multiple
-buckets nested inside other buckets. For example, we can partition documents by which country they belong to (a bucket), and
-then calculate the average salary per country (a metric).
+aggregation은 bucket과 metric의 조합이다. aggregation은 단일 bucket, 또는 단일 metric, 또는 각각 하나씩을 가질 수 있다. 다수의 bucket이 다른 bucket 내부에 중첩될 수 있다. 예를 들어, 속하는 국가에 따라(bucket) document를 분류하고, 국가별 평균 임금(metric)을 계산한다.
 
-bucket은 중첩될 수 있기 때문에, 훨씬 더 복잡한 집계를 끌어낼 수 있다.
-Because buckets can be nested, we can derive a much more complex aggregation:
+bucket은 중첩될 수 있기 때문에, 훨씬 더 복잡한 aggregation을 끌어낼 수 있다.
 
-국가별로 document를 분류(bucket)
-1. Partition documents by country (bucket).
-그 다음에, 성별에 따라 각 국가 bucket을 분류(bucket)
-2. Then partition each country bucket by gender (bucket).
-그 다음에, 연령대별로 각 성별 bucket을 분류(bucket)
-3. Then partition each gender bucket by age ranges (bucket).
-마지막으로, 각 연령대에 대한 평균 임금을 계산(metric)
-4. Finally, calculate the average salary for each age range (metric)
+1. 국가별로 document를 분류한다.(bucket)
 
-이것은 <국가, 성별, 나이>의 조합별로 평균 임금을 제공한다. 요청과 데이터에 대한 검토를 한번에!
-This will give you the average salary per `<country, gender, age>` combination.  All in
-one request and with one pass over the data!
+2. 그 다음 성별에 따라 각 국가 bucket을 분류한다.(bucket)
+
+3. 그 다음에 연령대별로 각 성별 bucket을 분류한다.(bucket)
+
+4. 마지막으로, 각 연령대에 대한 평균 임금을 계산한다.(metric)
+
+이 방법으로 <국가, 성별, 나이>의 조합별로 평균 임금을 제공한다. 한번의 요청으로 원하는 데이터 모두를 한번에 얻을 수 있다!
+(All in one request and with one pass over the data!)
