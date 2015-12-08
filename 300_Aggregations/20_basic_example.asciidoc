@@ -113,11 +113,8 @@ aggregation을 실행하고, 그 결과를 살펴보자.
 }
 --------------------------------------------------
 <1> search_type=count 매개변수를 사용했기 때문에, 검색 결과는 반환되지 않는다.
-
 <2> `colors` 집계는 `aggregations` field의 일부로 반환된다.
-
 <3> 각 bucket의 key는 `color` field에서 발견한 유일한 단어에 해당한다. 또한 해당 단어를 가지고 있는 document의 수를 나타내는 doc_count를 항상 포함한다.
-
 <4> 각 bucket의 수는 해당 색상의 document 수를 나타낸다.
 
 응답은 bucket의 목록을 가지고 있고, 각 bucket은 유일한 색상(red, green 등)에 대응한다. 또한, 각 bucket은 특정 bucket에 해당하는 document의 수를 포함한다. 예를 들면, 붉은 색상의 자동차는 4대가 있다.
@@ -125,4 +122,3 @@ aggregation을 실행하고, 그 결과를 살펴보자.
 위의 예는 완전히 실시간으로 작동한다. document가 검색이 가능하면, 집계도 가능하다. 즉 aggregation 결과를 실시간으로 대시보드를 생성하는 그래프 라이브러리에 즉시 보낼 수 있다. 은색 자동차를 팔자마자 은색 자동차에 대한 통계를 포함하도록 그래프는 동적으로 업데이트될 것이다.
 
 짜짠! 첫 번째 aggreation은 여기까지이다.
-((("aggregations", "basic example", startref ="ix_basicex")))
