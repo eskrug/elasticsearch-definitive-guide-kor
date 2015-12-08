@@ -1,19 +1,11 @@
 
 === Adding a Metric to the Mix
 
-위의 예제에서, 각 bucket의 document 수를 알 수 있었다. 이것은 유용하다. 하지만, 응용프로그램에서는 document에 대해 더 복잡한 통계를 요구한다. 예를 들자면, 각 bucket의 자동차 평균 가격은?
- The previous example told us the number of documents in each bucket, which is
-useful.  ((("aggregations", "basic example", "adding a metric")))But often, our applications require more-sophisticated metrics about
-the documents.((("metrics", "adding to basic aggregation (example)"))) For example, what is the average price of cars in each bucket?
+이전 예제에서 각 bucket의 document 수를 알 수 있었다. 이것은 유용하다. 하지만 응용 프로그램에서는 document에 대해 더 복잡한 metric들을 요구한다. 각 bucket의 자동차 평균 가격이 어떻게 되는지에 대해 묻는 상황을 그 예로 들 수 있다.
 
-이 정보를 얻기 위해, Elasticsearch에서, 특정 field에 대해 계산을 하기 위한, 어떤 metric이 필요하다. 바로, bucket 내부에 중첩하는 metric이다. metric은 어떤 bucket에 있는 document의 값에 기초한, 수학적 통계를 계산한다.
-To get this information, we need to tell Elasticsearch which metrics to calculate,
-and on which fields. ((("buckets", "nesting metrics in"))) This requires _nesting_ metrics inside the buckets.
-Metrics will calculate mathematical statistics based on the values of documents
-within a bucket.
+이러한 정보를 얻기 위해 Elasticsearch는 특정 field에 대해 계산을 하기 위해 어떤 metric이 필요한지를 알아야만 한다. 바로 bucket 내부에 중첩하는 metric이다. metric은 어떤 bucket에 있는 document의 값에 기초하여 수학적 통계를 계산한다.
 
-위의 자동차 예제에, average metric을 추가해 보자.
-Let's go ahead and add ((("average metric")))an `average` metric to our car example:
+이전 자동차 예제에, `average` metric을 추가해 보자.
 
 [source,js]
 --------------------------------------------------
@@ -36,23 +28,13 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/20_basic_example.json
-metric을 가지기 위해, 새로운 aggs 단계를 추가한다.
-<1> We add a new `aggs` level to hold the metric.
-그리고, metric의 이름을 “avg_price”라 한다.
-<2> We then give the metric a name: `avg_price`.
-마지막으로, price field에 대한 avg metric을 정의한다.
-<3> And finally, we define it as an `avg` metric over the `price` field.
+<1> metric을 가지기 위해, 새로운 `aggs` 단계를 추가한다.
+<2> 그리고 metric의 이름을 `avg_price`라 한다.
+<3> 마지막으로 `price` field에 대한 `avg` metric을 정의한다.
 
-알겠지만, 이전의 예제에다가 새로운 aggs 단계를 추가했다. 이 새로운 집계 단계는 terms bucket 내부에, avg metric을 중첩한 것이다. 결과적으로, 각 색상에 대한 평균값을 얻을 수 있다.
-As you can see, we took the previous example and tacked on a new `aggs` level.
-This new aggregation level allows us to nest the `avg` metric inside the
-`terms` bucket.  Effectively, this means we will generate an average for each
-color.
+알다시피 이전 예제에 새로운 `aggs` 단계를 추가했다. 이 새로운 aggregation 단계는 `terms` bucket 내부에, `avg` metric을 중첩한 것이다. 결과적으로 각 색상에 대한 평균값을 얻을 수 있다.
 
-“colors” 예제처럼, 나중에 값을 가져오기 위해, metric의 이름(avg_price)이 필요하다. 마지막으로, metric 자체(avg)와 평균을 계산하려는 field(price)를 지정한다.
-Just like the `colors` example, we need to name our metric (`avg_price`) so we
-can retrieve the values later.  Finally, we specify the metric itself (`avg`)
-and what field we want the average to be calculated on (`price`):
+`colors` 예제처럼, 이후에 값을 가져오기 위해 metric의 이름(`avg_price`)이 필요하다. 마지막으로 metric 자체(`avg`)와 평균을 계산하기 위한 field(`price`)를 지정한다.
 
 [source,js]
 --------------------------------------------------
@@ -88,11 +70,6 @@ and what field we want the average to be calculated on (`price`):
 ...
 }
 --------------------------------------------------
- 응답에 새로운 avg_price 요소가 있다.
-<1> New `avg_price` element in response
+<1> 응답에 새로운 avg_price 요소가 있다.
 
-비록 응답은 최소한으로 변경했지만, 그것에서 얻은 데이터는 상당히 늘어났다. 이전에는, 붉은 색상의 자동차는 4대가 있다고 알고 있었지만, 이제는 붉은 동자의 평균가격이 $32,500인 것을 알 수 있다. 이제, 보고서나 그래프에 바로 연결할 수 있다.
-Although the response has changed minimally, the data we get out of it has grown
-substantially.  Before, we knew there were four red cars.  Now we know that the
-average price of red cars is $32,500.  This is something that you can plug directly
-into reports or graphs.
+비록 응답은 최소한으로 변경했지만, 그것에서 얻은 데이터는 상당히 늘어났다. 이전에는 붉은 색상의 자동차는 4대가 있다고 알고 있었지만, 이제는 붉은 동자의 평균가격이 $32,500인 것을 알 수 있다. 이 결과를 보고서나 그래프에 바로 연결할 수 있다.
