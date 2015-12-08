@@ -18,7 +18,6 @@ FROM table
 GROUP BY color <2>
 --------------------------------------------------
 <1> COUNT(color)는 metric과 동일하다.
-
 <2> GROUP BY color는 bucket과 동일하다.
 
 bucket은 SQL의 grouping과 개념적으로 유사하고, metric은 COUNT(), SUM(), MAX() 등과 유사하다.
