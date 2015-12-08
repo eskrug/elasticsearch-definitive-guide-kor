@@ -58,12 +58,9 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/20_basic_example.json
-
 <1> aggregation은 최상위 `aggs` 매개변수를 아래에 위치한다.
 (원한다면 `aggregation` 매개변수를 사용해도 좋다.)
-
 <2> 원하는 대로, aggregation의 이름을 붙인다. 이 예제에서는 `colors`라고 하자.
-
 <3> 마지막으로 `terms` type의 단일 bucket을 정의한다.
 
 검색 결과에 관심이 없기 때문에, search_type=count을 더 빠른, count로 사용한다.
