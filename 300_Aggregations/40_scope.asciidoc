@@ -1,20 +1,12 @@
 
 [[_scoping_aggregations]]
-== Scoping Aggregations 집계의 범위 지정
+== Scoping Aggregations - 집계의 범위 지정
 
-지금까지의 집계 예제에서는, 검색 요청에서 query가 생략되었다. 전체 요청은 단순한 집계였다.
- With all of the aggregation examples given so far, you may have noticed that we
-omitted a `query` from the search request. ((("queries", "in aggregations")))((("aggregations", "scoping"))) The entire request was
-simply an aggregation.
+지금까지의 aggregation 예제에서는, 검색 요청에서 `query`가 생략되었다. 전체 요청은 단순한 aggregation이었다.
 
-집계는 검색 요청과 동시에 실행될 수 있다. 이를 위해, 새로운 개념인 scope(범위)를 이해해야 한다. 기본적으로, 집계는 query와 동일한 범위에서 동작한다. 즉, 집계는 query에 일치하는 document의 집합에서 계산된다.
-Aggregations can be run at the same time as search requests, but you need to
-understand a new concept: _scope_. ((("scoping aggregations", id="ix_scopeaggs", range="startofrange"))) By default, aggregations operate in the same
-scope as the query.  Put another way, aggregations are calculated on the set of
-documents that match your query.
+집계는 검색 요청과 동시에 실행될 수 있다. 이를 위해, 새로운 개념인 scope(범위)를 이해해야 한다. 기본적으로, aggregation은 query와 동일한 범위에서 동작한다. 즉, aggregation은 query에 일치하는 document의 집합에서 계산된다.
 
-첫 번째 예제 중 하나를 살펴 보자.
-Let's look at one of our first aggregation examples:
+첫 번째 aggregations 예제 중 하나를 살펴 보자.
 
 [source,js]
 --------------------------------------------------
@@ -31,10 +23,7 @@ GET /cars/transactions/_search?search_type=count
 --------------------------------------------------
 // SENSE: 300_Aggregations/40_scope.json
 
-집계는 독립적임을 알 수 있다. 실제로, Elasticsearch는 “어떤 query도 지정되지 않았다”를 “모든 document를 query했다”와 동등하다고 가정한다. 위의 query는 내부적으로 아래와 같이 변경된다.
-You can see that the aggregation is in isolation.  In reality, Elasticsearch
-assumes "no query specified" is equivalent to "query all documents." The preceding
-query is internally translated as follows:
+집계는 독립적임을 알 수 있다. 실제로, Elasticsearch는 “어떤 query도 지정되지 않았다”는 것은 “모든 document를 query 했다”와 동등하다고 가정한다. 위의 query는 내부적으로 아래와 같이 변경된다.
 
 [source,js]
 --------------------------------------------------
@@ -54,21 +43,11 @@ GET /cars/transactions/_search?search_type=count
 --------------------------------------------------
 // SENSE: 300_Aggregations/40_scope.json
 
-집계는 언제나 query의 범위 내에서 동작한다. 따라서, 독립된 집계는 실제로 match_all query의 범위(즉, 모든 document) 내에서 동작한다.
-The aggregation always operates in the scope of the query, so an isolated
-aggregation really operates in the scope of ((("match_all query", "isolated aggregations in scope of")))a `match_all` query--that is to say,
-all documents.
+aggregation은 언제나 query의 범위 내에서 동작한다. 따라서 독립된 aggregation은 실제로 match_all query의 범위(즉, 모든 document) 내에서 동작한다.
 
-범위를 이해했다면, 사용자 정의 집계를 시작할 수 있다. 이전의 예제 모두는, 모든 데이터에 대한 통계(가장 많이 팔린 자동차, 모든 자동차의 평균 가격, 월별로 가장 많이 팔린 자동차 등)를 계산하였다.
-Once armed with the knowledge of scoping, we can start to customize
-aggregations even further.  All of our previous examples calculated statistics
-about _all_ of the data: top-selling cars, average price of all cars, most sales
-per month, and so forth.
+범위를 이해했다면, 사용자 정의 aggregation을 시작할 수 있다. 이전의 예제 모두는 모든 데이터에 대한 통계(가장 많이 팔린 자동차, 모든 자동차의 평균 가격, 월별로 가장 많이 팔린 자동차 등)를 계산하였다.
 
 범위를 이용하면, “나와 있는 Ford 자동차에 어떤 색상이 있나요?”같은 질문을 할 수 있다. 간단하게, 요청에 query(이 경우에는 match query)를 추가하면 된다.
-With scope, we can ask questions such as "How many colors are Ford cars are
-available in?"  We do this by simply adding a query to the request (in this case
-a `match` query):
 
 [source,js]
 --------------------------------------------------
@@ -89,12 +68,9 @@ GET /cars/transactions/_search  <1>
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/40_scope.json
- 검색 hit를 반환하기 위해, search_type=count를 생략하였다.
-<1> We are omitting `search_type=count` so((("search_type", "count"))) that search hits are returned too.
+<1> 검색 hit를 반환하기 위해, search_type=count를 생략하였다.
 
 search_type=count를 생략하였기 때문에, 검색 결과와 집계 결과를 모두 볼 수 있다.
-By omitting the `search_type=count` this time, we can see both the search
-results and the aggregation results:
 
 [source,js]
 --------------------------------------------------
@@ -139,31 +115,16 @@ results and the aggregation results:
 }
 --------------------------------------------------
 
-이것은 사소해 보일 수도 있지만, 고급 강력 대시보드의 핵심이다. 검색 창을 추가하여, 정적 대시보드를 실시간 데이터 탐색 장치로 변환할 수 있다. 이것은 사용자가 단어를 검색하고, 실시간으로 업데이트되는 graph(집계로 강력해지고, query로 범위를 지정한)를 모두 볼 수 있도록 한다. Hoodop을 시도해보자!
-This may seem trivial, but it is the key to advanced and powerful dashboards.
-You can transform any static dashboard into a real-time data exploration device
-by adding a search bar.((("dashboards", "adding a search bar")))  This allows the user to search for terms and see all
-of the graphs (which are powered by aggregations, and thus scoped to the query)
-update in real time.  Try that with Hadoop!
+이것은 사소해 보일 수도 있지만, 진보되고 강력 대시보드의 핵심이다. 검색 창을 추가하여, 정적 대시보드를 실시간 데이터 탐색 장치로 변환할 수 있다. 이것은 사용자가 단어를 검색해 실시간으로 업데이트되는 graph(aggregation으로 강화하고, query로 범위를 지정한)의 모든 것을 볼 수 있도록 한다. Hoodop으로 이것을 시도해보라! (쉽지 않을 것이다.)
 
 [float]
 === Global Bucket
 
-query에 범위를 지정한 집계를 원하는 경우도 있다. 하지만 가끔, 데이터의 일부를 검색하면서, 데이터 전체에 대한 집계가 필요한 경우가 있다.
-You'll often want your aggregation to be scoped to your query.  But sometimes
-you'll want to search for a subset of data, but aggregate across _all_ of
-your data.((("aggregations", "scoping", "global bucket")))((("scoping aggregations", "using a global bucket")))
+대부분 query에 범위를 지정한 aggregation을 원한다. 하지만 가끔 데이터의 일부를 검색하면서, 데이터 전체에 대한 aggregation이 필요한 경우가 있다.
 
-예를 들어, Ford 자동차의 평균 가격과 전체 자동차의 평균 가격을 비교하려 한다고 가정해 보자. 첫 번째 정보를 얻기 위해, 일반적인 집계(query로 범위를 지정한)를 사용할 수 있다. 두 번째 정보는 global bucket을 사용하여 얻을 수 있다.
-For example, say you want to know the average price of Ford cars compared to the
-average price of _all_ cars. We can use a regular aggregation (scoped to the query)
-to get the first piece of information.  The second piece of information can be
-obtained by using((("buckets", "global")))((("global bucket"))) a `global` bucket.
+예를 들어, Ford 자동차의 평균 가격과 전체 자동차의 평균 가격을 비교하려 한다고 가정해 보자. 첫 번째 정보를 얻기 위해, 일반적인 aggregation(query로 범위를 지정한)을 사용할 수 있다. 두 번째 정보는 `global` bucket을 사용하여 얻을 수 있다.
 
-global bucket은 query 범위에 관계없이(완전히 범위를 무시), document 모두를 포함한다. 그것은 bucket이기 때문에, 다른 것과 마찬가지로, 그 안에 집계를 중첩할 수 있다.
-The +global+ bucket will contain _all_ of your documents, regardless of the query
-scope; it bypasses the scope completely.  Because it is a bucket, you can nest
-aggregations inside it as usual:
++global+ bucket은 query 범위에 관계없이(완전히 범위를 무시한다.), document 모두를 포함한다. 그것은 bucket이기 때문에, 다른 것과 마찬가지로 그 안에 aggregation을 중첩할 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -191,22 +152,10 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/40_scope.json
- 이 집계는 query의 범위 내(“ford”에 일치하는 모든 document”)에서 동작한다.
-<1> This aggregation operates in the query scope (for example, all docs matching +ford+)
- global bucket은 매개변수를 가지지 않는다.
-<2> The `global` bucket has no parameters.
- 이 집계는 제조업체에 관계없이 모든 document에 대해 동작한다.
-<3> This aggregation operates on the all documents, regardless of the make.
+<1> 이 aggregation은 query의 범위 내(+ford+에 일치하는 모든 document)에서 동작한다.
+<2> global bucket은 매개변수를 가지지 않는다.
+<3> 이 집계는 제조업체에 관계없이 모든 document에 대해 동작한다.
 
-single_avg_price metric은 query 범위(모든 “ford” 자동차)내 모든 document를 기반으로 계산한다. avg_price metric은 global bucket 아래에 중첩된다. 즉, 범위를 완전히 무시하고, 모든 document를 계산한다. 해당 집계에 대해 반환되는 평균은 모든 자동차의 평균을 나타낸다.
-The +single_avg_price+ metric calculation is based on all documents that fall under the
-query scope--all +ford+ cars.  The +avg_price+ metric is nested under a
-`global` bucket, which means it ignores scoping entirely and calculates on
-all the documents.  The average returned for that aggregation represents
-the average price of all cars.
++single_avg_price+ metric은 query 범위(모든 +ford+ 자동차)내 모든 document를 기반으로 계산한다. +avg_price+ metric은 global bucket 아래에 중첩된다. 즉, 범위를 완전히 무시하고, 모든 document를 계산한다. 해당 aggregation에 대해 반환되는 평균은 모든 자동차의 평균을 나타낸다.
 
-지금까지 이 책을 읽어오면서, “가능한 한 모든 곳에서 filter를 사용하자” 라는 문구를 기억할 것이다. 집계에서도 마찬가지이다. 다음 장에서, 그냥 query의 범위를 제한하는 대신에, 집계에 filter를 적용하는 방법에 대해 이야기할 것이다.
-If you've made it this far in the book, you'll recognize the mantra: use a filter
-wherever you can.  The same applies to aggregations, and in the next chapter
-we show you how to filter an aggregation instead of just limiting the query
-scope.((("scoping aggregations", range="endofrange", startref="ix_scopeaggs")))
+지금까지 이 책을 읽어오면서, “가능한 한 모든 곳에서 filter를 사용하자” 라는 문구를 기억할 것이다. aggregation에서도 마찬가지이다. 다음 장에서, 그냥 query의 범위를 제한하는 대신, 집계에 filter를 적용하는 방법에 대해 이야기할 것이다.
