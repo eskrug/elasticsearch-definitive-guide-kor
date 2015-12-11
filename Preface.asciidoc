@@ -7,241 +7,200 @@
 현존하는 기술은 어떻게 warehouse에 데이터를 채워, 저장하고 구조화할 것인가에 집중되어 있다.
 실제로 그 데이터를 숙지하여, 실시간으로 의사 결정을 해야 할 때까지는 그것도 괜찮기는 했다.
 
-
 Elasticsearch는 분산 확장 가능한 실시간 검색 및 분석 엔진이다.
 project 초반에 예상하지 못했던 방식으로, 데이터를 검색하고, 분석하고, 탐색해야 하는 경우가 있다.
 디스크에 있는 기본 데이터가 유용하지 않기 때문이다.
 
-Whether you need full-text search, real-time analytics of structured data, or
-a combination of the two, this book introduces you to the fundamental
-concepts required to start working with Elasticsearch at a basic level. With
-these foundations laid, it will move on to more-advanced search techniques,
-which you will need to shape the search experience to fit your requirements.
+구조화된 데이터의 full text 검색, 실시간 분석이나 이 둘의 조합이 필요할 때,
+이 책은 기초적인 수준에서 Elasticsearch를 시작하는데 요구되는 기본적인 개념을 소개할 것이다.
+이러한 기초가 마련되면, 요구사항에 맞게 검색 환경을 형성할 수 있는, 더 고급스러운 검색 기술로 이동할 것이다.
 
-Elasticsearch is not just about full-text search. We explain structured
-search, analytics, the complexities of dealing with human language,
-geolocation, and relationships. We will also discuss how best to model your
-data to take advantage of the horizontal scalability of Elasticsearch, and how
-to configure and monitor your cluster when moving to production.
+Elasticsearch는 단순한 full text 검색이 아니다.
+구조화된 검색, 분석, 인간의 언어를 처리하는 복잡성, 위치정보, 관계를 설명한다.
+Elasticsearch의 수평확장(scale out)의 장점을 활용하기 위한, 최선의 데이터 설계 방법과 초기화 방법, 모니터링 방법에 대해 이야기 할 것이다.
 
-=== Who Should Read This Book
+=== 이 책을 누가 읽어야 하는가?
 
-This book is for anybody who wants to put their data to work.  It doesn't
-matter whether you are starting a new project and have the flexibility to
-design the system from the ground up, or whether you need to give new life to
-a legacy system.  Elasticsearch will help you to solve existing problems and
-open the way to new features that you haven't yet considered.
+이 책은 데이터를 가지고 작업해 보려 하는 모든 이들을 위한 책이다.
+새로운 project를 시작하려는 사람, 처음부터 시스템을 디자인하려는 유연성을 가진 사람,
+기존의 시스템에 새로운 기능을 만들려고 하는 사람 등, 모든 이가 가능하다.
+Elasticsearch는 기존의 문제점을 해결하고, 아직 고려하지 못했던 새로운 기능에 대한 길을 열어 줄 것이다.
 
-This book is suitable for novices and experienced users alike. We expect you
-to have some programming background and, although not required, it would help
-to have used SQL and a relational database. We explain concepts from first
-principles, helping novices to gain a sure footing in the complex world of
-search.
+이 책은 초보자에서 고급 사용자까지 모두 적합하다. 약간의 프로그래밍 배경 지식을 가지고 있기를 바란다.
+그리고 필수적이지는 않지만, SQL과 RDB(Relational Database)에 대한 경험이 있다면 도움이 될 것이다.
+“검색이라는 복잡한 세계에서, 확실한 기반을 얻기 위해 초보자를 돕는다”는 것이 첫 번째 원칙이다.
 
-The reader with a search background will also benefit from this book.
-Elasticsearch is a new technology that has some familiar concepts.  The more
-experienced user will gain an understanding of how those concepts have been
-implemented and how they interact in the context of Elasticsearch. Even  the
-early chapters contain nuggets of information that will be useful to the
-more advanced user.
+검색에 대한 경험을 가진 독자도 이 책이 도움이 될 것이다.
+Elasticsearch는 약간의 유사한 개념을 가진 새로운 기술이다.
+조금 경험 있는 독자는 이런 개념들이 구현된 방법과, 그것들이 Elasticsearch의 문맥과 맞아 들어가는 방법을 이해하게 될 것이다.
+초반부에도 고급 사용자에게 유용한 정보가 있다.
 
-Finally, maybe you are in DevOps. While the other departments are stuffing
-data into Elasticsearch as fast as they can, you're the one charged with
-stopping their servers from bursting into flames. Elasticsearch scales
-effortlessly, as long as your users play within the rules. You need to know
-how to set up a stable cluster before going into production, and then be able to
-recognize the warning signs at three in the morning in order to prevent
-catastrophe. The earlier chapters may be of less interest to you, but the last
-part of the book is essential reading--all you need to know to avoid
-meltdown.
+마지막으로, 아마도 여러분은 개발자이거나 운영자일 것이다.
+다른 부서가 가능한 한 빨리 Elasticsearch에 데이터를 채우고 있는 동안, 당신은 서버에 문제가 발생하는 것을 방지하는 업무를 가지고 있을 것이다.
+Elasticsearch는 사용자가 규칙을 준수한다면 쉽게 확장할 수 있다.
+제품에 적용하기 전에, 안정적인 cluster를 구성하는 방법을 알아야 하고, 그 다음에 사고를 방지하기 위해, 경고 메시지를 이해할 수 있어야 한다.
+초반 장들은 흥미가 좀 적을 것이지만, 책의 마지막 부분은 필수적(심각한 사고를 피하기 위한 알아야 할 모든 것)으로 읽어야 한다
 
+=== 왜 이 책이 씌여졌는가?
 
-=== Why We Wrote This Book
+이 책은 Elasticsearch에 대한 이야기가 필요하기 때문에 씌여졌다.
+무엇을 찾아야 하는지 알고 있다면, 현재 Elasticsearch의 Reference Document는 뛰어나니 잘 활용하기 바란다.
+Reference Document 문서는 여러분이 정보 검색의 개념, 분산 시스템, query DSL 등을 속속들이 알고 있는 것으로 가정한다.
 
-We wrote this book because Elasticsearch needs a narrative.  The existing
-reference documentation is excellent--as long as you know what you are
-looking for. It assumes that you are intimately familiar with information-retrieval concepts, distributed systems, the query DSL, and a host of other
-topics.
+이 책은 그런 가정이 전혀 없다. 검색과 분산 시스템에 대해, 진짜 초보인 사람이 이 책을 집어 들고, 몇 개의 장만으로 prototype 구축을 시작할 수 있도록 쓰여졌다..
 
-This book makes no such assumptions.  It has been written so that a complete
-beginner--to both search and distributed systems--can pick it up and start
-building a prototype within a few chapters.
+문제 기반의 접근 방식: 여기 문제가 있다. 어떻게 해결할 것인가? 다른 솔루션의 장단점은 무엇인가? 를 사용했다.
+우리는 기본적인 것으로 시작해서, 각 장은 앞 장을 기반으로 만들었고, 실질적인 예를 제공하고, 필요한 이론을 설명하였다.
 
-We have taken a problem-based approach: this is the problem, how do I solve
-it, and what are the trade-offs of the alternative solutions? We start with the
-basics, and each chapter builds on the preceding ones, providing practical
-examples and explaining the theory where necessary.
+기존의 Reference Document는 기능을 어떻게 사용하는가를 설명하였다. 이 책은 다양한 기능을 왜, 언제 사용하는가를 설명하려 했다.
 
-The existing reference documentation explains _how_ to use features.  We want
-this book to explain _why_ and _when_ to use various features.
+=== Elasticsearch 버전
 
-=== Elasticsearch Version
+이 책의 설명과 코드 예제는, 출판되는 시점에 이용 가능한, Elasticsearch의 1.4.0 버전을 대상으로 하고 있다.
+하지만, Elasticsearch는 빠른 속도로 발전하는 프로젝트이다. 이 책의 온라인 버전은 Elasticsearch의 변화에 맞추어 업데이트될 것이다.
 
-The explanations and code examples in this book target the latest version of
-Elasticsearch available at the time of going to print--version 1.4.0--but
-Elasticsearch is a rapidly evolving project.  The online version of this book
-will be updated as Elasticsearch changes.
+이 책의 온라인 버전의 최신 버전은 아래 URL에서 참고할 수 있다.
+https://www.elastic.co/guide/en/elasticsearch/guide/current[book online].
 
-You can find the latest version of this http://www.elasticsearch.org/guide/[book online].
+또한, GitHub 저장소에서, 변경 사항을 확인할 수 있다.
+https://github.com/elasticsearch/elasticsearch-definitive-guide/[GitHub repository].
 
-You can also track the changes that have been made by visiting the https://github.com/elasticsearch/elasticsearch-definitive-guide/[GitHub repository].
+=== 이 책을 읽는 방법
 
+Elasticsearch는 복잡한 것을 간단하게 하기 위해, 매우 열심히 노력했고, 많은 부분에서 성공했다.
+지금은 검색과 분산 시스템은 복잡하다고 말하겠지만, 조만간 Elasticsearch를 최대한 활용하기 위해,
+어느 정도의 복잡함을 이해하기 시작할 것이다.
 
-=== How to Read This Book
+그러나 복잡함은 마법이 아니다.
+우리는 복잡한 시스템을, 주문에 응답하는 마법의 블랙박스로 보는 경향이 있다.
+그러나 내부 동작은 일반적으로 간단한 프로세스다. 이러한 프로세스를 이해하는 것은 마법을 해지하는 것이다.
+블랙박스가 여러분이 바라는 대로 할 것이라는 희망 대신, 이해를 한다는 것은 확실함과 명확함을 당신에게 제공할 것이다.
 
-Elasticsearch tries very hard to make the complex simple, and to a large
-degree it succeeds in this. That said, search and distributed systems _are_
-complex, and sooner or later you have to get to grips with some of the
-complexity in order to take full advantage of Elasticsearch.
+이 책은 최고의 안내서(definitive guide)이다.
+Elasticsearch를 시작하도록 도와줄 뿐 아니라, 더 깊고 좀 더 흥미로운 주제 또한 다룰 것이다.
+cluster 내부(<<distributed-cluster>>), 분산 document 저장소(<<distributed-docs>>),
+분산 검색 실행(<<distributed-search>>), and 그리고 shard 내부(<<inside-a-shard>>) 같은 장들은 필수적으로 읽어야 하는 것은 아니지만,
+Elasticsearch 내부에 대한, 확실한 이해를 제공할 것이다.
 
-Complexity, however, is not the same as magic.  We tend to view complex
-systems as magical black boxes that respond to incantations, but there are
-usually simple processes at work within. Understanding these processes helps
-to dispel the magic--instead of hoping that the black box will do what you
-want, understanding gives you certainty and clarity.
+이 책의 초반 부분은 각 장을 이전 장에 기반하여 차례대로 읽어야 한다. 위에서 언급한 장은 생략해도 좋다.
+근접 일치(<<proximity-matching>>), 부분 일치(<<partial-matching>>) 같은 후반 장들은 독립적이고, 필요할 때 참고할 수 있다.
 
-This is a definitive guide: we help you not only to get started with
-Elasticsearch, but also to tackle the deeper more, interesting topics. These include <<distributed-cluster>>, <<distributed-docs>>,
-<<distributed-search>>, and <<inside-a-shard>>, which are not essential
-reading but do give you a solid understanding of the internals.
+=== 이 책의 구성
 
-The first part of the book should be read in order as each chapter builds on
-the previous one (although you can skim over the chapters just mentioned).  Later chapters such as <<proximity-matching>> and <<partial-matching>>
-are more standalone and can be referred to as needed.
-
-=== Navigating This Book
-
-This book is divided into seven parts:
+이 책은 7개의 파트로 구성되어 있다:
 
 ifndef::es_build[]
 
-*  Chapters pass:[<a href="#intro">1</a>] through pass:[<a href="#inside-a-shard">11</a>]
-   provide an introduction to Elasticsearch. They
-   explain how to get your data in and out of Elasticsearch, how Elasticsearch
-   interprets the data in your documents, how basic search works, and how to
-   manage indices. By the end of this section, you will already be able to
-   integrate your application with Elasticsearch. Chapters pass:[<a href="#distributed-cluster">2</a>], pass:[<a href="#distributed-docs">4</a>], pass:[<a href="#distributed-search">9</a>], and pass:[<a href="#inside-a-shard">11</a>]
-   are supplemental chapters that provide more insight into the distributed
-   processes at work, but are not required reading.
+*  Chapters pass:[<a href="#intro">1</a>] 에서 pass:[<a href="#inside-a-shard">11</a>]
+   까지는 Elasticsearch에 대한 소개이다.
+   데이터를 Elasticsearch에 넣고 가져오는 방법, Elasticsearch가 document내의 데이터를 해석하는 방법,
+   기본적인 검색이 동작하는 방법, indices를 관리하는 방법을 설명한다.
+   마지막 부분에 이르면, 이미 Elasticsearch를 응용프로그램에 통합할 수 있을 것이다.
+   Chapters pass:[<a href="#distributed-cluster">2</a>], pass:[<a href="#distributed-docs">4</a>], pass:[<a href="#distributed-search">9</a>], 그리고 pass:[<a href="#inside-a-shard">11</a>]
+   은 분산 프로세스에 대한 자세한 통찰력을 제공하는 추가적인 장들이다.
+   하지만, 필수로 읽어야 하는 장은 아니다.
 
-*  Chapters pass:[<a href="#structured-search">12</a>] through pass:[<a href="#controlling-relevance">17</a>]
-   offer a deep dive into search--how to index and
-   query your data to allow  you to take advantage of more-advanced concepts
-   such as word proximity, and partial matching. You will understand how
-   relevance works and how to control it to ensure that the best results are
-   on the first page.
+*  Chapters pass:[<a href="#structured-search">12</a>] 에서 pass:[<a href="#controlling-relevance">17</a>]
+   까지는 검색으로 좀 더 깊숙이 들어간다. 데이터를 색인하고 검색하는 방법을 이해하게 될 것이다.
+   단어의 근접성(proximity), 부분 일치, 퍼지 일치 그리고 언어 인식 같은 고급 검색 개념을 활용할 수 있게 된다.
+   relevance(관련성, 적합도)가 어떻게 동작하는지, 첫 번째 page에 최선의 결과를 나오게 하기 위한, 그것의 조정 방법을 이해할 수 있을 것이다.
 
-*  Chapters pass:[<a href="#language-intro">18</a>] through pass:[<a href="#fuzzy-matching">24</a>]
-   tackle the thorny subject of dealing with human
-   language through effective use of analyzers and queries. We start with
-   an easy approach to language analysis before diving into the complexities
-   of language, alphabets, and sorting. We cover stemming, stopwords, synonyms,
-   and fuzzy matching.
+*  Chapters pass:[<a href="#language-intro">18</a>] 에서 pass:[<a href="#fuzzy-matching">24</a>]
+   까지는 analyzer와 query의 효과적인 사용을 통해, 인간의 언어를 다루는 어려운 주제와 씨름하게 된다.
+   언어와 알파벳, 정렬의 복잡함으로 들어가기 전에, 언어 분석에 대한 용이한 접근으로 쉽게 시작한다.
+   형태소 분석, 불용어, 동의어, fuzzy 일치 등을 다룰 것이다.
 
-*  Chapters pass:[<a href="#aggs-high-level">25</a>] through pass:[<a href="#controlling-memory">35</a>]
-   discuss aggregations and analytics--ways to summarize and group your data to show overall trends.
+*  Chapters pass:[<a href="#aggs-high-level">25</a>] 에서 pass:[<a href="#controlling-memory">35</a>]
+   까지는 집계(aggregations), 분석(analytics)에 대해 이야기한다. - 전반적인 추세를 보여주기 위해, 데이터를 요약하고 그룹을 형성하는 방법
 
-*  Chapters pass:[<a href="#geopoints">36</a>] through pass:[<a href="#geo-shapes">39</a>]
-   present the two approaches to geolocation
-   supported by Elasticsearch: lat/lon geo-points, and complex geo-shapes.
+*  Chapters pass:[<a href="#geopoints">36</a>] 에서 pass:[<a href="#geo-shapes">39</a>]
+   까지는 Elasticsearch가 지원하는 두 가지 방법의 위치정보(geolocation)에 대해 이야기한다. – 위도/경도 geo-point, 복잡한 geo-shape
 
-*  Chapters pass:[<a href="#relations">40</a>] through pass:[<a href="#scale">43</a>]
-   talk about how to model your data to work
-   most efficiently with Elasticsearch.  Representing relationships
-   between entities is not as easy in a search engine as it is in
-   a relational database, which has been designed for that purpose.
-   These chapters also explain how to suit your index design to
-   match the flow of data through your system.
+*  Chapters pass:[<a href="#relations">40</a>] 에서 pass:[<a href="#scale">43</a>]
+   까지는 Elasticsearch가 가장 효과적으로 동작하기 위해, 데이터를 설계하는 방법에 대해 이야기한다.
+   entity사이의 관계를 나타내는 것은, 이 목적을 위해 설계된 Relational Database 같이, 검색 엔진에서는 쉽지 않다.
+   이들 장에서는, 시스템의 데이터 흐름에 일치하도록 index 설계를 맞추는 방법을 설명한다.
 
-*  Finally, Chapters pass:[<a href="#cluster-admin">44</a>] through pass:[<a href="#post_deploy">46</a>]
-   discuss moving to production: the important configurations, what to monitor, and how to diagnose and prevent problems.
+*  마지막으로, Chapters pass:[<a href="#cluster-admin">44</a>] 에서 pass:[<a href="#post_deploy">46</a>]
+   까지는 제품 배포에 대해 이야기한다. 중요한 설정, 모니터링, 문제점을 진단하고 방지하는 방법.
 
 endif::es_build[]
 
 ifdef::es_build[]
 
-*  Chapters <<intro>> through <<inside-a-shard>> provide an introduction to Elasticsearch. They
-   explain how to get your data in and out of Elasticsearch, how Elasticsearch
-   interprets the data in your documents, how basic search works, and how to
-   manage indices. By the end of this section, you will already be able to
-   integrate your application with Elasticsearch. Chapters
-   <<distributed-cluster>>, <<distributed-docs>>, <<distributed-search>>, and <<inside-a-shard>>
-   are supplemental chapters that provide more insight into the distributed
-   processes at work, but are not required reading.
+*  Chapters <<intro>> 에서 <<inside-a-shard>> 까지는 Elasticsearch에 대한 소개이다.
+   데이터를 Elasticsearch에 넣고 가져오는 방법, Elasticsearch가 document내의 데이터를 해석하는 방법,
+   기본적인 검색이 동작하는 방법, indices를 관리하는 방법을 설명한다.
+   마지막 부분에 이르면, 이미 Elasticsearch를 응용프로그램에 통합할 수 있을 것이다.
+   <<distributed-cluster>>, <<distributed-docs>>, <<distributed-search>>, 그리고 <<inside-a-shard>>
+   은 분산 프로세스에 대한 자세한 통찰력을 제공하는 추가적인 장들이다.
+   하지만, 필수로 읽어야 하는 장은 아니다.
 
-*  Chapters <<structured-search>> through <<controlling-relevance>>
-   offer a deep dive into search--how to index and
-   query your data to allow  you to take advantage of more-advanced concepts
-   such as word proximity, and partial matching. You will understand how
-   relevance works and how to control it to ensure that the best results are
-   on the first page.
+*  Chapters <<structured-search>> 에서 <<controlling-relevance>>
+   까지는 검색으로 좀 더 깊숙이 들어간다. 데이터를 색인하고 검색하는 방법을 이해하게 될 것이다.
+   단어의 근접성(proximity), 부분 일치, 퍼지 일치 그리고 언어 인식 같은 고급 검색 개념을 활용할 수 있게 된다.
+   relevance(관련성, 적합도)가 어떻게 동작하는지, 첫 번째 page에 최선의 결과를 나오게 하기 위한, 그것의 조정 방법을 이해할 수 있을 것이다.
 
-*  Chapters <<language-intro>> through <<fuzzy-matching>>
-   tackle the thorny subject of dealing with human
-   language through effective use of analyzers and queries. We start with
-   an easy approach to language analysis before diving into the complexities
-   of language, alphabets, and sorting. We cover stemming, stopwords, synonyms,
-   and fuzzy matching.
+*  Chapters <<language-intro>> 에서 <<fuzzy-matching>>
+   까지는 analyzer와 query의 효과적인 사용을 통해, 인간의 언어를 다루는 어려운 주제와 씨름하게 된다.
+   언어와 알파벳, 정렬의 복잡함으로 들어가기 전에, 언어 분석에 대한 용이한 접근으로 쉽게 시작한다.
+   형태소 분석, 불용어, 동의어, fuzzy 일치 등을 다룰 것이다.
 
-*  Chapters <<aggs-high-level>> through <<controlling-memory>>
-   discuss aggregations and analytics--ways to summarize and group your data to show overall trends.
+*  Chapters <<aggs-high-level>> 에서 <<controlling-memory>>
+   까지는 집계(aggregations), 분석(analytics)에 대해 이야기한다. - 전반적인 추세를 보여주기 위해, 데이터를 요약하고 그룹을 형성하는 방법
 
-*  Chapters <<geopoints>> through <<geo-shapes>>
-   present the two approaches to geolocation
-   supported by Elasticsearch: lat/lon geo-points, and complex geo-shapes.
+*  Chapters <<geopoints>> 에서 <<geo-shapes>>
+   까지는 Elasticsearch가 지원하는 두 가지 방법의 위치정보(geolocation)에 대해 이야기한다. – 위도/경도 geo-point, 복잡한 geo-shape
 
-*  Chapters <<relations>> through <<scale>>
-   talk about how to model your data to work
-   most efficiently with Elasticsearch.  Representing relationships
-   between entities is not as easy in a search engine as it is in
-   a relational database, which has been designed for that purpose.
-   These chapters also explain how to suit your index design to
-   match the flow of data through your system.
+*  Chapters <<relations>> 에서 <<scale>>
+   까지는 Elasticsearch가 가장 효과적으로 동작하기 위해, 데이터를 설계하는 방법에 대해 이야기한다.
+   entity사이의 관계를 나타내는 것은, 이 목적을 위해 설계된 Relational Database 같이, 검색 엔진에서는 쉽지 않다.
+   이들 장에서는, 시스템의 데이터 흐름에 일치하도록 index 설계를 맞추는 방법을 설명한다.
 
-*  Finally, Chapters <<cluster-admin>> through <<post_deploy>>
-   discuss moving to production: the important configurations, what to monitor, and how to diagnose and prevent problems.
+*  마지막으로, Chapters <<cluster-admin>> 에서 <<post_deploy>>
+   까지는 제품 배포에 대해 이야기한다. 중요한 설정, 모니터링, 문제점을 진단하고 방지하는 방법.
 
 endif::es_build[]
 
-There are three topics that we do not cover in this book, because they are evolving rapidly and anything we
-write will soon be out-of-date:
+어느 정도 지면이 부족하고, 부분적으로는 빠른 속도로 발전하기 때문에,
+곧 유효기간이 지날 것 같아서, 이 책에서 다루지 않는 3가지 주제가 있다:
 
-* Highlighting of result snippets: see http://bit.ly/151kOhG[Highlighting].
-* _Did-you-mean_ and _search-as-you-type_ suggesters: see http://bit.ly/1INTMa9[Suggesters].
-* Percolation--finding queries which match a document: see http://bit.ly/1KNs3du[Percolators].
+* 결과 정보에 대한 강조: http://bit.ly/151kOhG[Highlighting] 확인.
+* 검색 제안(정확한 의미를 파악한 제안: did-you-mean suggest)과 instant 검색(search-as-you-type): http://bit.ly/1INTMa9[Suggesters] 확인.
+* percolation – document와 일치하는 query를 검색: http://bit.ly/1KNs3du[Percolators] 확인.
 
-=== Online Resources
+=== 온라인 정보
 
-Because this book focuses on problem solving in Elasticsearch rather than syntax, we sometimes reference the existing documentation for a complete
-list of parameters.  The reference documentation can be found here:
+이 책은 Elasticsearch에 대한 문법보다는 문제의 해결에 초점이 맞춰져 있기 때문에, 완전한 매개변수 목록을 위해, 가끔씩 기존의 매뉴얼을 참조한다.
+그 매뉴얼은 아래 URL에서 볼 수 있다:
 
-http://www.elasticsearch.org/guide/
+https://www.elastic.co/guide/
 
-=== Conventions Used in This Book
+=== 이 책의 관례
 
-The following typographical conventions are used in this book:
+이 책에서는 아래와 같은 인쇄상의 관례를 사용한다:
 
-_Italic_:: Indicates emphasis, and new terms or concepts.
+_Italic_:: 새로운 용어나 개념.
 
-+Constant width+:: Used for program listings, as well as within paragraphs to refer to program elements such as variable or function names, databases, data types, environment variables, statements, and keywords.
-
++일정한 폭+:: 프로그램 요소를 참조하는 단락뿐만 아니라, 프로그램 목록에 사용된다.
+예: 변수, 함수명, 데이터베이스, 데이터 type, 환경변수, 명령문, 예약어
 
 [TIP]
 ====
-This icon signifies a tip, suggestion.
+팁, 제안.
 ====
 
 [NOTE]
 ====
-This icon signifies a general note.
+일반적인 메모.
 ====
 
 [WARNING]
 ====
-This icon indicates a warning or caution.
+경고, 주의.
 ====
 
-=== Using Code Examples
+=== 예제 코드
 ////
 Do not edit this section.
 ////
