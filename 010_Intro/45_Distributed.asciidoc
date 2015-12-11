@@ -42,4 +42,3 @@ These chapters are not required reading--you can use Elasticsearch without
 understanding these internals--but they will provide insight that will make
 your knowledge of Elasticsearch more complete. Feel free to skim them and
 revisit at a later point when you need a more complete understanding.
-

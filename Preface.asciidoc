@@ -78,12 +78,12 @@ Elasticsearch는 복잡한 것을 간단하게 하기 위해, 매우 열심히 �
 
 이 책은 최고의 안내서(definitive guide)이다.
 Elasticsearch를 시작하도록 도와줄 뿐 아니라, 더 깊고 좀 더 흥미로운 주제 또한 다룰 것이다.
-cluster 내부(<<distributed-cluster>>), 분산 document 저장소(<<distributed-docs>>),
-분산 검색 실행(<<distributed-search>>), and 그리고 shard 내부(<<inside-a-shard>>) 같은 장들은 필수적으로 읽어야 하는 것은 아니지만,
+cluster 내부 <<distributed-cluster>> , 분산 document 저장소 <<distributed-docs>> ,
+분산 검색 실행 <<distributed-search>> , and 그리고 shard 내부 <<inside-a-shard>>  같은 장들은 필수적으로 읽어야 하는 것은 아니지만,
 Elasticsearch 내부에 대한, 확실한 이해를 제공할 것이다.
 
 이 책의 초반 부분은 각 장을 이전 장에 기반하여 차례대로 읽어야 한다. 위에서 언급한 장은 생략해도 좋다.
-근접 일치(<<proximity-matching>>), 부분 일치(<<partial-matching>>) 같은 후반 장들은 독립적이고, 필요할 때 참고할 수 있다.
+근접 일치 <<proximity-matching>> , 부분 일치 <<partial-matching>>  같은 후반 장들은 독립적이고, 필요할 때 참고할 수 있다.
 
 === 이 책의 구성
 
@@ -180,14 +180,14 @@ https://www.elastic.co/guide/
 
 이 책에서는 아래와 같은 인쇄상의 관례를 사용한다:
 
-_Italic_:: 새로운 용어나 개념.
+_이탤릭_:: 새로운 용어나 개념.
 
-+일정한 폭+:: 프로그램 요소를 참조하는 단락뿐만 아니라, 프로그램 목록에 사용된다.
++코드블럭+:: 프로그램 요소를 참조하는 단락뿐만 아니라, 프로그램 목록에 사용된다.
 예: 변수, 함수명, 데이터베이스, 데이터 type, 환경변수, 명령문, 예약어
 
 [TIP]
 ====
-팁, 제안.
+팁이나 제안.
 ====
 
 [NOTE]
@@ -197,7 +197,7 @@ _Italic_:: 새로운 용어나 개념.
 
 [WARNING]
 ====
-경고, 주의.
+경고 및 주의.
 ====
 
 === 예제 코드

@@ -28,4 +28,3 @@ information is in case you need to refer to it in the future, but don't be
 overwhelmed by the detail.
 
 ****
-
