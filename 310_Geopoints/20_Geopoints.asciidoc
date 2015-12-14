@@ -5,7 +5,7 @@ A _geo-point_ is a single latitude/longitude point on the Earth's surface.((("ge
 can be used to calculate distance from a point, to determine whether a point
 falls within a bounding box, or in aggregations.
 
-_geo-point_는 지구 표면에 하나의 위도-경도이다. ((("geo-points")))특정 지점이 경계 박스 내부나 집계에 있는지 여부를 결정하기 위해, 특정 지점에서의 거리를 계산하기 위해 사용될 수 있다.
+_geo-point_ 는 지구 표면에 하나의 위도-경도이다. ((("geo-points")))특정 지점이 경계 박스 내부나 집계에 있는지 여부를 결정하기 위해, 특정 지점에서의 거리를 계산하기 위해 사용될 수 있다.
 
 _geo-point_ 는 지구표면 위에 한 지점의 위도/경도 를 나타낸다. ((("geo-points"))) Geo-points 는 한 지점으로 부터 거리를 계산하기 위해 사용이 가능한데, 경계범위 위치의 안에 있는지 확인하거나, 그 수치를 집계할 때 사용할 수 있다.
 
@@ -43,6 +43,10 @@ With the `location` field defined as a `geo_point`, we can proceed to index
 documents containing latitude/longitude pairs,((("geo-points", "location fields defined as, lat/lon formats")))((("location field, defined as geo-point")))((("latitude/longitude pairs", "lat/lon formats for geo-points")))((("arrays", "geo-point, lon/lat format")))((("strings", "geo-point, lat/lon format")))((("objects", "geo-point, lat/lon format"))) which can be formatted as
 strings, arrays, or objects:
 
+`geo_point` 로 정의되어진 `location` 필드는 , 인덱스 도큐먼트 안에 strings, arrays, object 형태로 위도/경도를 포함시킬 수 있습니다.
+documents containing latitude/longitude pairs,((("geo-points", "location fields defined as, lat/lon formats")))((("location field, defined as geo-point")))((("latitude/longitude pairs", "lat/lon formats for geo-points")))((("arrays", "geo-point, lon/lat format")))((("strings", "geo-point, lat/lon format")))((("objects", "geo-point, lat/lon format"))) which can be formatted as
+strings, arrays, or objects:
+
 [role="pagebreak-before"]
 [source,json]
 -----------------------
@@ -67,9 +71,9 @@ PUT /attractions/restaurant/3
   "location": [ -73.983, 40.719 ] <3>
 }
 -----------------------
-<1> A string representation, with `"lat,lon"`.
-<2> An object representation with `lat` and `lon` explicitly named.
-<3> An array representation with `[lon,lat]`.
+<1> String 형태일때 표현방법 `"lat,lon"`  "위도,경도" 순서로 정의 합니다.
+<2> Object 형태일때 표현방법 `lat` 과 `lon` 으로 명시적으로 이름을 설정합니다. 
+<3> Array 형태일때 표현방법 `[lon,lat]`.  [경도,위도] 순서로 정의 합니다.
 
 [CAUTION]
 ========================
@@ -77,12 +81,22 @@ PUT /attractions/restaurant/3
 Everybody gets caught at least once: string geo-points are
 `"latitude,longitude"`, while array geo-points are `[longitude,latitude]`&#x2014;the opposite order!
 
+누구든 한번 쯤 발생하게되는 문제:
+  String 에서 geo-points 는 `"latitude,longitude"` 위도,경도 순서로 기록하고,
+  Array 에서 geo-point 는 `[longitude,latitude]` 경도,위도 순서로 기록합니다.
+  &#x2014;순서가 반대인 것에 주의하세요. 
+
 Originally, both strings and arrays in Elasticsearch used latitude followed by
 longitude. However, it was decided early on to switch the order for arrays in
 order to conform with GeoJSON.
 
+원래 Elasticsearch 에서는 위도,경도 순서로 사용을 합니다.
+그러나 Array 에서는 GeoJSON 에서 초기에 결정된 경도,위도 순서를 따릅니다.
+
 The result is a bear trap that captures all unsuspecting users on their
 journey to full geolocation nirvana.
+
+이 결과로 위치 정보를 사용하는 모든 사용자들이 함정에 빠집니다.   
 
 ========================
 
