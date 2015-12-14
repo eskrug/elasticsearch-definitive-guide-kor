@@ -1,3 +1,133 @@
+=== Elasticsearch와 이야기 해보자
+
+Elasticsearch와 이야기하는 방법은 Java 사용 여부에 달려 있다. ((("Elasticsearch", "talking to")))
+
+==== Java API
+
+만약 Java를 사용한다면((("Java", "clients for Elasticsearch"))),
+Elasticsearch는 여러분이 코드에서 사용할 수 있도록, 두 종류의 기본 클라이언트를 제공한다:
+
+Node client::
+    Node Client ((("node client"))) 는 _데이터 node가 아닌_ node로서 local cluster와 결합한다.
+    즉, 데이터 자체를 가지고 있지 않다. 하지만, cluste r내의 어느 node에 데이터가 있는지 알고 있고,
+    적절한 node로 직접 요청을 보낼 수 있다.
+
+Transport client::
+    경량의 ((("transport client"))) Transport Client는 원격 cluster에 요청하는데 사용된다.
+    cluster 자체와 결합하지 않고, 단순히 cluster내의 node에 요청을 보낸다.
+
+위의 두 Java 클라이언트는 고유의 Elasticsearch _transport_ protocol을 사용하여,
+port 9300을 통해 cluster와 이야기한다. cluster내의 node들은 port 9300을 통해,
+다른 node들과 이야기한다. 이 port가 열려있지 않으면, cluster를 형성할 수 없다.
+
+[TIP]
+====
+Java 클라이언트는 반드시 node의 Elasticsearch와 동일한 _주요_ 버전을 사용해야 한다.
+그렇지 않으면, 서로 통신할 수 없다.
+====
+
+Java 클라이언트에 대한 좀 더 자세한 정보는 http://www.elasticsearch.org/guide/[Guide]
+의 Java API 부분을 참고하라.
+
+==== RESTful API with JSON over HTTP
+
+Java가 아닌 모든 언어는 가장 익숙한 Web 클라이언트에서, ((("RESTful API, communicating with Elasticseach")))
+당신이 선호하는 웹 클라이언트로 접근하여 RESTful API를 사용하여 port _9200_을 통해
+Elasticsearch와 이야기할 수 있다. ((("port 9200 for non-Java clients")))
+위에서 살펴 보았듯이 심지어 command line에서조차 `curl` 명령어를((("curl command", "talking to Elasticsearch with")))
+이용해 Elasticsearch와 이야기할 수 있다.
+
+NOTE: Elasticsearch는 다수의 언어(Groovy, Javascript, .NET, PHP, Perl, Python, Ruby 등)를
+위하여, 공식적인 클라이언트를((("clients", "other than Java"))) 제공한다.
+그리고, 수많은 Community에서 제공되는 클라이언트와 통합요소는 http://www.elasticsearch.org/guide/[Guide]에서 확인할 수 있다.
+
+Elasticsearch에 대한 요청은 HTTP 요청((("HTTP requests")))((("requests to Elasticsearch")))과 동일한 형태로 구성되어 있다.
+
+[source,js]
+--------------------------------------------------
+curl -X<VERB> '<PROTOCOL>://<HOST>:<PORT>/<PATH>?<QUERY_STRING>' -d '<BODY>'
+--------------------------------------------------
+
+위와 같이 < > 라고 사용된 부분은 다음과 같다:
+
+[horizontal]
+`VERB`::            적절한 HTTP _method_또는 _verb_ : `GET`, `POST`, `PUT`, `HEAD`, or `DELETE`
+`PROTOCOL`::        `http` 나 `https` (Elasticsearch에 `https` proxy 가 있다면)
+`HOST`::            Elasticsearch cluster에서 node의 hostname 또는 your local machine에서 node를 위한 +localhost+
+`PORT`::            Elasticsearch HTTP 서비스에서 기본 포트 번호는 `9200`.
+`PATH`::            API Endpoint (예를들면, `_count`는 cluster에서의 documents의 수를 리턴할 것이다). Path는 `_cluster/stats` or `_nodes/stats/jvm` 등 많은 components를 포함할 수 있다.
+`QUERY_STRING`::    선택적인 query-string 파라미터이다. (예를들면, `?pretty`는  읽기 쉽게 하기 위하여,  _pretty-print_ JSON Response이다.)
+`BODY`::            JSON으로 encode된 request body (request가 필요할 때)
+
+예를 들면, cluster의 document의 수를 검색하기 위해, 아래처럼 사용한다:
+
+[source,js]
+--------------------------------------------------
+curl -XGET 'http://localhost:9200/_count?pretty' -d '
+{
+    "query": {
+        "match_all": {}
+    }
+}
+'
+--------------------------------------------------
+
+Elasticsearch는 `200 OK` 같은 HTTP status code와, (HEAD 요청을 제외하고) JSON 으로
+encode된 응답 body를 반환한다. 위의 `curl` 요청은 아래와 같은 JSON body로 응답한다:
+
+[source,js]
+--------------------------------------------------
+{
+    "count" : 0,
+    "_shards" : {
+        "total" : 5,
+        "successful" : 5,
+        "failed" : 0
+    }
+}
+--------------------------------------------------
+
+HTTP header를 보여주라고 `curl` 요청하지 않았기 때문에 응답에서 HTTP header를 볼 수 없다.
+header를 보기 위해서는 `curl`에 `-i` 매개변수를 사용해야 한다
+
+[source,js]
+--------------------------------------------------
+curl -i -XGET 'localhost:9200/'
+--------------------------------------------------
+
+앞으로 이 책에서는 모든 요청에서 공통적인 부분(hostname, port, curl command 등)을 제거한,
+생략된 형태의 `curl` 예제로 표시할 것이다. 아래처럼 전체 요청을 보여주는 대신,
+
+[source,js]
+--------------------------------------------------
+curl -XGET 'localhost:9200/_count?pretty' -d '
+{
+    "query": {
+        "match_all": {}
+    }
+}'
+--------------------------------------------------
+
+아래처럼 생략된 형태로 표시할 것이다:
+
+[source,js]
+--------------------------------------------------
+GET /_count
+{
+    "query": {
+        "match_all": {}
+    }
+}
+--------------------------------------------------
+// SENSE: 010_Intro/15_Count.json
+
+사실, 위 예제는 <<marvel,Marvel>> 설치한, Sense Console에서((("Marvel", "Sense console")))((("Sense console (Marvel plugin)", "curl requests in"))
+사용되는 형식과 같다. 위의 “View in Sense” link를 클릭하여, sense에서 예제 code를 실행할 수 있다.
+
+
+
+
+
 === Talking to Elasticsearch
 
 How you talk to Elasticsearch depends on((("Elasticsearch", "talking to"))) whether you are using Java.
