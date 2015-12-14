@@ -1,43 +1,27 @@
 
-== Looking at Time
+== Looking at Time - 시간 살펴보기
 
-If search is the most popular activity in Elasticsearch, building date
-histograms must be the second most popular.((("date histograms, building")))((("histograms", "building date histograms")))((("aggregations", "building date histograms from")))  Why would you want to use a date
-histogram?
+Elasticsearch에서 검색이 가장 인기 있는 요소라면, 두 번째는 date histogram을 만드는 것이다. 왜 date histogram을 사용할까?
 
-Imagine your data has a timestamp.((("time, analytics over", id="ix_timeanalyze")))  It doesn't matter what the data is--Apache
-log events, stock buy/sell transaction dates, baseball game times--anything with a timestamp can benefit from the date histogram.  When you have
-a timestamp, you often want to build metrics that are expressed _over time_:
+데이터가 timestamp를 가지고 있다고 가정해보자. date histogram으로 이득을 얻을 수 있다면, 데이터가 무엇(Apache log events, 주식 매도/매수 거래 날짜, 야구 경기 시간)이든 중요하지 않다. timestamp를 가지고 있다면, 시간에 따라 표현되는 metric을 구축할 수 있다.
 
-- How many cars sold each month this year?
-- What was the price of this stock for the last 12 hours?
-- What was the average latency of our website every hour in the last week?
+- 올해 월별 자동차 판매 수는?
+- 지난 12시간 동안, 이 주식의 가격은?
+- website의 지난 주 시간 별 평균 대기 시간은?
 
-While regular histograms are often represented as bar charts, date histograms
-tend to be converted into line graphs representing time series.((("analytics", "over time")))  Many
-companies use Elasticsearch _solely_ for analytics over time series data.  The `date_histogram` bucket is their bread and butter.
+일반적인 histogram은 막대 그래프로 표현되지만, date histogram은 시계열을 나타내는 선 그래프로 표현한다. 많은 기업들이 오로지 데이터에 대한 시계열 데이터의 분석을 위해 Elasticsearch를 사용한다. `date_histogram bucket`이 그들의 가장 기본적인 수단이다.
 
-The `date_histogram` bucket works((("buckets", "date_histogram"))) similarly to the regular `histogram`.  Rather
-than building buckets based on a numeric field representing numeric ranges,
-it builds buckets based on time ranges.  Each bucket is therefore defined as a
-certain calendar size (for example, `1 month` or `2.5 days`).
+`date_histogram` bucket은 일반적인 histogram과 매우 유사하게 동작한다. 일반적인 histogram이 숫자의 범위를 나타내는 숫자 field를 기준으로 bucket을 만든다면, `date_histogram` bucket은 시간 범위를 기준으로 bucket을 만든다. 따라서 각각의 bucket은 특정 기간(1달, 2.5일 등)으로 정의된다.
 
 [role="pagebreak-before"]
-.Can a Regular Histogram Work with Dates?
+.일반적인 histogram은 날짜 단위로 동작할 수 있나?
 ****
-Technically, yes.((("histogram bucket", "dates and")))  A regular `histogram` bucket will work with dates.  However,
-it is not calendar-aware.  With the `date_histogram`, you can specify intervals
-such as `1 month`, which knows that February is shorter than December.  The
-`date_histogram` also has the advantage of being able to work with time zones,
-which allows you to customize graphs to the time zone of the user, not the server.
+기술적으로, 동작할 수 있다. 일반적인 `histogram` bucket은 날짜 단위로 동작할 것이다. 그러나 달력의 월을 인식하지는 못한다. date_histogram에서는 2월이 12월보다 짧지만 1달(1 month) 간격으로 interval을 지정할 수 있다. 또한 `date_histogram`은 timezone에 맞춰 동작할 수 있는 장점을 가진다. 서버가 아닌 사용자의 timezone으로 그래프를 정의할 수 있다.
 
-The regular histogram will interpret dates as numbers, which means you must specify
-intervals in terms of milliseconds.  And the aggregation doesn't know about
-calendar intervals, which makes it largely useless for dates.
+일반적인 histogram은 날짜를 숫자로 해석한다. 그래서 interval을 milliseconds 단위로 지정해야 한다. 그리고 날짜를 전혀 쓸모 없게 만들어, aggregation은 월 간격에 대해서는 처리하지 못하므로, interval로는 사용하지 않아야 한다.
 ****
 
-Our first example ((("line charts, building from aggregations")))will build a simple line chart to answer this question:
-how many cars were sold each month?
+첫 번째 예제는, 월별 자동차 판매 수라는 질문에 답하기 위해, 간단한 선 그래프를 만들어 볼 것이다.
 
 [source,js]
 --------------------------------------------------
@@ -55,18 +39,13 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/35_date_histogram.json
-<1> The interval is requested in calendar terminology (for example, one month per bucket).
+<1> interval에는 달력 용어를 사용한다.(예제에서는 bucket별로 한달 씩)
 // "pretty"-> "readable by humans". mention that otherwise get back ms-since-epoch?
-<2> We provide a date format so that bucket keys are pretty.
+<2> bucket key를 보기 좋게 출력하기 위한 날짜 형식을 제공한다.
 
-Our query has a single aggregation, which builds a bucket
-per month.  This will give us the number of cars sold in each month.  An additional
-`format` parameter is provided so the buckets have "pretty" keys.  Internally,
-dates are simply represented as a numeric value.  This tends to make UI designers
-grumpy, however, so a prettier format can be specified using common date formatting.
+이 query는, 월별 bucket을 구축하는, 단일 aggregation이다. 각 달에 팔린 자동차의 수를 출력한다. bucket이 보기 좋은 key를 가지기 위해, 추가로 `format` 매개변수가 제공된다. 내부적으로, 날짜는 숫자 값으로 간단하게 표현된다. 더 보기 좋은 format은 공통의 date formatting을 사용하여 지정할 수 있다.
 
-The response is both expected and a little surprising (see if you can spot
-the surprise):
+답은 예상대로 아래와 같다.
 
 [source,js]
 --------------------------------------------------
@@ -115,24 +94,18 @@ the surprise):
 }
 --------------------------------------------------
 
-The aggregation is represented in full.  As you can see, we have buckets
-that represent months, a count of docs in each month, and our pretty `key_as_string`.
+aggregation이 전체 출력된다. 위에서 보듯이, 월별 bucket, 각 달의 document 수, 그리고, 보기 좋은 `key_as_string`을 가지고 있다.
 
 [[_returning_empty_buckets]]
-=== Returning Empty Buckets
+=== Returning Empty Buckets - 비어 있는 bucket 반환하기
 
-Notice something odd about that last response?
+이전의 응답이 뭔가 이상하지 않은가?
 
-Yep, that's right.((("aggregations", "returning empty buckets")))((("buckets", "empty, returning")))  We are missing a few months!  By default, the `date_histogram`
-(and `histogram` too) returns only buckets that have a nonzero
-document count.
+그렇다. 빠져 있는 달이 있다. 기본적으로, `date_histogram`과 `histogram`은 document 수가 0이 아닌 bucket만을 반환한다.
 
-This means your histogram will be a minimal response.  Often, this is not the
-behavior you want.  For many applications, you would like to dump the
-response directly into a graphing library without doing any post-processing.
+즉, histogram은 최소한으로 응답한다. 가끔은 우리가 실제로 원하는 바가 아닐 수 있다. 많은 응용프로그램에서, 응답을 어떤 처리 없이 그래프 라이브러리에 바로 전달하고 싶을 것이다.
 
-Essentially, we want buckets even if they have a count of zero. We can set two
-additional parameters that will provide this behavior:
+기본적으로, 수가 0인 bucket도 필요하다. 이를 위한 2개의 부가적인 매개변수가 있다.
 
 [source,js]
 --------------------------------------------------
@@ -155,36 +128,24 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/35_date_histogram.json
-<1> This parameter forces empty buckets to be returned.
-<2> This parameter forces the entire year to be returned.
+<1> 이 매개변수는 비어 있는 bucket을 반환하게 한다.
+<2> 이 매개변수는 지정한 년도 전체를 반환하게 한다.
 
-The two additional parameters will force the response to return all months in the
-year, regardless of their doc count.((("min_doc_count parameter")))  The `min_doc_count` is very understandable:
-it forces buckets to be returned even if they are empty.
+추가된 2개의 매개변수는 document 수에 관계없이, 해당 년도의 모든 달을 반환하게 한다. `min_doc_count`는 비어 있는 bucket도 반환하게 한다.
 
-The `extended_bounds` parameter requires a little explanation.((("extended_bounds parameter")))  The `min_doc_count`
-parameter forces empty buckets to be returned, but by default Elasticsearch will return only buckets that are between the minimum and maximum value in your data.
+`extended_bounds` 는 약간의 설명이 필요하다. `min_doc_count` 매개변수는 비어 있는 bucket을 반환하도록 하는데, 기본적으로 Elasticsearch는 데이터의 최소와 최대값 사이에 있는 데이터만을 반환한다.
 
-So if your data falls between April and July, you'll have buckets
-representing only those months (empty or otherwise).  To get the full year, we need
-to tell  Elasticsearch that we want buckets even if they fall _before_ the
-minimum value or _after_ the maximum value.
+따라서, 데이터가 4월과 7월 사이에 있다면, 비어 있든 아니든, 해당 달을 나타내는 bucket만을 가지게 될 것이다. 전체 년도의 데이터를 얻기 위해서는 Elasticsearch에게 최소 값 이전 또는 최대 값 이후에 해당하는 bucket도 필요하다.
 
-The `extended_bounds` parameter does just that.  Once you add those two settings,
-you'll get a response that is easy to plug straight into your graphing libraries
-and give you a graph like <<date-histo-ts1>>.
+extended_bounds 매개변수는 바로 이런 동작을 한다. 이 2개의 설정을 추가하면, 응답을 그래프 라이브러리로 바로 전달할 수 있게 된다. 그리고 그래프는 <<date-histo-ts1>>과 같다.
 
 [[date-histo-ts1]]
-.Cars sold over time
+.Cars sold over time - 시간대별 자동차 판매량
 image::images/elas_29in01.png["Cars sold over time"]
 
-=== Extended Example
+=== Extended Example - 확장된 예제
 
-Just as we've seen a dozen times already, buckets can be nested in buckets for
-more-sophisticated behavior.((("buckets", "nested in other buckets", "extended example")))((("aggregations", "extended example")))  For illustration, we'll build an aggregation
-that shows the total sum of prices for all makes, listed by quarter.  Let's also
-calculate the sum of prices per individual make per quarter, so we can see
-which car type is bringing in the most money to our business:
+이미 여러 번 본 것과 마찬가지로, 더 복잡한 동작을 위하여 bucket은 bucket 내부에 중첩될 수 있다. 설명을 위해, 분기별로 나열된, 모든 제조업체에 대해 가격의 총합을 보여주는 aggregation을 구현할 것이다. 또한, 분기별로 개별 제조업체 별로의 가격의 합을 구할 것이다. 이렇게 하면 가장 많은 돈을 벌어오는 자동차의 종류를 알 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -222,11 +183,11 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/35_date_histogram.json
-<1> Note that we changed the interval from `month` to `quarter`.
-<2> Calculate the sum per make.
-<3> And the total sum of all makes combined together.
+<1> interval이 `month`에서 `quarter`로 바뀌었다.
+<2> 제조업체별 합계를 구한다.
+<3> 모든 제조업체의 총 합계를 구한다.
 
-This returns a (heavily truncated) response:
+아래와 같은 응답을 반환한다.
 
 [source,js]
 --------------------------------------------------
@@ -265,27 +226,20 @@ This returns a (heavily truncated) response:
 }
 --------------------------------------------------
 
-We can take this response and put it into a graph, ((("line charts, building from aggregations")))((("bar charts, building from aggregations")))showing a line chart for
-total sale price, and a bar chart for each individual make (per quarter), as shown in <<date-histo-ts2>>.
+이 응답을 그래프에 넣으면, <<date-histo-ts2>>처럼 총 판매 가격을 위한 선 그래프와 각 분기별, 개별 제조업체별 판매가는 막대 그래프로 보여준다.
 
 [[date-histo-ts2]]
-.Sales per quarter, with distribution per make
+.Sales per quarter, with distribution per make - 각 제조업체별 분포, 분기별 판매
 image::images/elas_29in02.png["Sales per quarter, with distribution per make"]
 
-=== The Sky's the Limit
+=== The Sky's the Limit - 하지 못할게 없다.
 
-These were obviously simple examples, but the sky really is the limit
-when it comes to charting aggregations. ((("dashboards", "building from aggregations")))((("Kibana", "dashboard in"))) For example, <<kibana-img>> shows a dashboard in
-Kibana built with a variety of aggregations.
+이것들은 분명히 간단한 예제이지만, 차트 aggregation으로 하지 못할 것이 없다. 예를 들자면, <<kibana-img>>는 다양한 aggregation을 가지고 구축한 Kibana의 dashboard이다.
 
 [[kibana-img]]
 .Kibana--a real time analytics dashboard built with aggregations
 image::images/elas_29in03.png["Kibana - a real time analytics dashboard built with aggregations"]
 
-Because of the real-time nature of aggregations, dashboards like this are easy to query,
-manipulate, and interact with.  This makes them ideal for nontechnical employees
-and analysts who need to analyze the data but cannot build a Hadoop job.
+aggregation의 실시간이라는 특성으로 인하여, 이 같은 dashboard는 query하거나, 조작하거나, 상호작용 하기가 쉽다. 이것은 기술직이 아닌 직원과, Hadoop을 구축할 수 없지만, 데이터를 분석해야 하는 분석가에게 이상적이다.
 
-To build powerful dashboards like Kibana, however, you'll likely need some of
-the more advanced concepts such as scoping, filtering, and sorting aggregations.
-((("time, analytics over", startref ="ix_timeanalyze")))
+그렇지만 Kibana같은 강력한 dashboard를 구축하기 위해서는, scoping, filtering, sorting aggregation 같은, 더욱 진보한 개념이 필요하다.

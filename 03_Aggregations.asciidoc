@@ -5,30 +5,55 @@ ifndef::es_build[= placeholder3]
 
 [partintro]
 --
+지금까지, 이 책에서는 검색에 집중하였다. 검색과 함께, query를 가지고 그 query 조건에 일치하는 document의 집합을 찾고자 한다. 속담처럼, 건초더미에서 바늘을 찾고 있는 것이다.
+
 Until this point, this book has been dedicated to search.((("searching", "search versus aggregations")))((("aggregations")))  With search,
 we have a query and we want to find a subset of documents that
 match the query.  We are looking for the proverbial needle(s) in the
 haystack.
+
+aggregation으로 주어진 데이터들의 개요를 얻기 위해, 관점을 달리할 것이다. 개별 document를 찾는 것 대신, 데이터의 완전한 집합을 분석하고 요약할 것이다.
 
 With aggregations, we zoom out to get an overview of our data.  Instead of
 looking for individual documents, we want to analyze and summarize our complete
 set of data:
 
 // Popular manufacturers? Unusual clumps of needles in the haystack?
+
+- 건초더미에는 존재하는 바늘의 수는?
+
 - How many needles are in the haystack?
+
+- 바늘의 평균 길이는?
+
 - What is the average length of the needles?
+
+- 제조업체별 바늘의 평균 길이는?
+
 - What is the median length of the needles, broken down by manufacturer?
+
+- 매달 건초더미에 추가되는 바늘의 수는?
+
 - How many needles were added to the haystack each month?
+
+aggregation은 아래와 같은 더 미묘한 질문에도 답할 수 있다.
 
 Aggregations can answer more subtle questions too:
 
+- 가장 인기 있는 바늘 제조업체는?
 - What are your most popular needle manufacturers?
+
+- 이상하거나 비정상적인 바늘 덩어리가 있는가?
 - Are there any unusual or anomalous clumps of needles?
+
+aggregation은 데이터에 대한 복잡한 질문도 가능하다. 검색과 그 기능은 완전히 다르지만, 동일한 데이터 구조를 활용한다. 즉, aggregation은 검색처럼 빠르게, 거의 실시간으로 실행된다.
 
 Aggregations allow us to ask sophisticated questions of our data.  And yet, while
 the functionality is completely different from search, it leverages the
 same data-structures.  This means aggregations execute quickly and are
 _near real-time_, just like search.
+
+이것은 보고(reporting)와 대시보드 기능에 매우 강력하다. 데이터를 “모으는 작업(rollups)”을 수행(예: Hadoop은 실행하는데 일주일이 걸린다)하는 대신, 즉시 반응할 수 있도록, 실시간으로 데이터를 시각화할 수 있다.
 
 This is extremely powerful for reporting and dashboards.  Instead of performing
 _rollups_ of your data (_that crusty Hadoop job that takes a week to run_),
@@ -36,10 +61,14 @@ you can visualize your data in real time, allowing you to respond immediately.
 Your report changes as your data changes, rather than being pre-calculated, out of
 date and irrelevant.
 
+마지막으로, aggregation은 검색 요청과 동시에 작동한다. 즉, 단일 요청으로, 동일한 데이터에 대해 document의 검색/필터링과 분석을 동시에 할 수 있다. 그리고 aggregation은 사용자의 검색 문맥에서 계산되기 때문에, 단순히 4성 호텔의 수를 표시하지 않고, 검색 조건에 일치하는 4성 호텔의 수를 표시한다.
+
 Finally, aggregations operate alongside search requests.((("aggregations", "operating alongside search requests"))) This means you can
 both search/filter documents _and_ perform analytics at the same time, on the
 same data, in a single request.  And because aggregations are calculated in the
 context of a user's search, you're not just displaying a count of four-star hotels--you're displaying a count of four-star hotels that _match their search criteria_.
+
+aggregation은 많은 기업들이 전적으로 분석만을 위해 대형 Elasticsearch cluster를 구축할 만큼 매우 강력하다.
 
 Aggregations are so powerful that many companies have built large Elasticsearch
 clusters solely for analytics.
@@ -56,4 +85,3 @@ include::304_Approximate_Aggregations.asciidoc[]
 include::305_Significant_Terms.asciidoc[]
 
 include::306_Practical_Considerations.asciidoc[]
-

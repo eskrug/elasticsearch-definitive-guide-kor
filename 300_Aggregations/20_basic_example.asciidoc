@@ -1,23 +1,21 @@
 
 == Aggregation Test-Drive
 
-We could spend the next few pages defining the various aggregations
-and their syntax,((("aggregations", "basic example", id="ix_basicex"))) but aggregations are truly best learned by example.
-Once you learn how to think about aggregations, and how to nest them appropriately,
-the syntax is fairly trivial.
+다음 몇 페이지에서, 다양한 aggregation과 그 문법에 대해 이야기할 것이다.
+aggregation은 예제로 배우는 것이 제일 좋다.
+aggregation에 대한 생각하는 방법과 적절하게 중첩시키는 방법을 배우기만 하면, 문법은 매우 간단하다.
 
 [NOTE]
 =========================
-A complete list of aggregation buckets and metrics can be found at the http://bit.ly/1KNL1R3[online
-reference documentation].  We'll cover many of them in this chapter, but glance
-over it after finishing so you are familiar with the full range of capabilities.
+aggregation bucket과 metric 전체 목록은 {ref}/search-aggregations.html[Elasticsearch Reference]에서 찾을 수 있다.
+이번 챕터에서 많은 부분을 다룰 것이지만, 전체 목록을 살펴본 이후에 모든 기능들에 대해 익숙해질 것이다.
 =========================
 
-So let's just dive in and start with an example.  We are going to build some
-aggregations that might be useful to a car dealer.  Our data will be about car
-transactions: the car model, manufacturer, sale price, when it sold, and more.
+그러니 들어가서, 예제를 시작해 보자.
+자동차 판매상에게 유용한 몇 가지 aggregation을 구축할 것이다.
+데이터는 자동차 모델, 제조업체, 판매가, 언제 팔렸는지 등의 자동차 거래에 대한 것이다.
 
-First we will bulk-index some data to work with:
+먼저, 작업할 약간의 데이터를 색인하자.
 
 [source,js]
 --------------------------------------------------
@@ -41,9 +39,10 @@ POST /cars/transactions/_bulk
 --------------------------------------------------
 // SENSE: 300_Aggregations/20_basic_example.json
 
-Now that we have some data, let's construct our first aggregation.  A car dealer
-may want to know which color car sells the best.  This is easily accomplished
-using a simple aggregation.  We will do this using a `terms` bucket:
+이제 데이터가 준비되었으니, 첫 번째 aggregation을 만들어보자.
+자동차 판매상은 가장 잘 팔린 자동차가 어떤 색상인지 알고 싶어한다.
+이것은 간단한 집계를 사용하여 쉽게 할 수 있다.
+`terms` bucket을 사용할 것이다.
 
 [source,js]
 --------------------------------------------------
@@ -59,35 +58,29 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/20_basic_example.json
+<1> aggregation은 최상위 `aggs` 매개변수를 아래에 위치한다.
+(원한다면 `aggregation` 매개변수를 사용해도 좋다.)
+<2> 원하는 대로, aggregation의 이름을 붙인다. 이 예제에서는 `colors`라고 하자.
+<3> 마지막으로 `terms` type의 단일 bucket을 정의한다.
 
-<1> Aggregations are placed under the ((("aggregations", "aggs parameter")))top-level `aggs` parameter (the longer `aggregations`
-will also work if you prefer that).
-<2> We then name the aggregation whatever we want: `colors`, in this example
-<3> Finally, we define a single bucket of type `terms`.
+검색 결과에 관심이 없기 때문에, search_type=count을 더 빠른, count로 사용한다.
 
-Aggregations are executed in the context of search results,((("searching", "aggregations executed in context of search results"))) which means it is
-just another top-level parameter in a search request (for example, using the `/_search`
-endpoint).  Aggregations can be paired with queries, but we'll tackle that later
-in <<_scoping_aggregations>>.
+aggregation은 검색 결과의 문맥 안에서 실행된다. 즉, 검색 요청의 또 다른 최상위 단계 매개변수(예: 마지막에 _search를 사용)이다. 집계는 query와 결합할 수 있다. 이것은 나중에 scoping aggregations – 집계의 범위 지정(p.127)에서 이야기하겠다
+
+aggregation은 검색 결과의 문맥 안에서 실행된다. 이 말은 검색 요청(예를 들어, `/_search`를 사용하는 것)의 또다른 최상위 매개변수이다.
+aggregation은 query와 결합할 수 있다. <<_scoping_aggregations>> 에서 이야기할 것이다.
 
 [NOTE]
 =========================
-You'll notice that we used the `count` <<search-type,search_type>>.((("count search type")))
-Because we don't care about search results--the aggregation totals--the 
-`count` search_type will be faster because it omits the fetch phase.
+`count` <<search-type,search_type>>을 사용한 것을 볼 수 있다.
+검색 결과는 관심 대상이 아니기 때문에, fetch 단계를 생략해 `count` search_type은 더욱 빠르게 동작하게 된다.
 =========================
 
-Next we define a name for our aggregation.  Naming is up to you;
-the response will be labeled with the name you provide so that your application
-can parse the results later.
+다음으로, 집계에 대한 이름을 정의한다. 이름은 여러분이 결정하면 된다. 나중에 응용 프로그램이 결과를 분석할 수 있도록, 응답은 여러분이 제공한 이름으로 표시될 것이다.
 
-Next we define the aggregation itself.  For this example, we are defining
-a single `terms` bucket.((("buckets", "terms bucket (example)")))((("terms bucket", "defining in example aggregation")))  The `terms` bucket will dynamically create a new
-bucket for every unique term it encounters.  Since we are telling it to use the
-`color` field, the `terms` bucket will dynamically create a new bucket for each color.
+다음으로 집계 그 자체를 정의한다. 이 예에서, 단일 terms bucket을 정의하고 있다. terms bucket은 유일한 단어를 만날 때마다 동적으로 새로운 bucket을 생성한다. `color` field를 사용했기 때문에, terms bucket은 각 색상에 대해 동적으로 새로운 bucket을 생성한다.
 
-
-Let's execute that aggregation and take a look at the results:
+aggregation을 실행하고, 그 결과를 살펴보자.
 
 [source,js]
 --------------------------------------------------
@@ -116,28 +109,13 @@ Let's execute that aggregation and take a look at the results:
    }
 }
 --------------------------------------------------
-<1> No search hits are returned because we used the `search_type=count` parameter
-<2> Our `colors` aggregation is returned as part of the `aggregations` field.
-<3> The `key` to each bucket corresponds to a unique term found in the `color` field.
-It also always includes `doc_count`, which tells us the number of docs containing the term.
-<4> The count of each bucket represents the number of documents with this color.
+<1> search_type=count 매개변수를 사용했기 때문에, 검색 결과는 반환되지 않는다.
+<2> `colors` 집계는 `aggregations` field의 일부로 반환된다.
+<3> 각 bucket의 key는 `color` field에서 발견한 유일한 단어에 해당한다. 또한 해당 단어를 가지고 있는 document의 수를 나타내는 doc_count를 항상 포함한다.
+<4> 각 bucket의 수는 해당 색상의 document 수를 나타낸다.
 
-The ((("doc_count")))response contains a list of buckets, each corresponding to a unique color
-(for example, red or green). Each bucket also includes a count of the number of documents
-that "fell into" that particular bucket.  For example, there are four red cars.
+응답은 bucket의 목록을 가지고 있고, 각 bucket은 유일한 색상(red, green 등)에 대응한다. 또한, 각 bucket은 특정 bucket에 해당하는 document의 수를 포함한다. 예를 들면, 붉은 색상의 자동차는 4대가 있다.
 
-The preceding example is operating entirely in real time: if the documents are searchable,
-they can be aggregated.  This means you can take the aggregation results and
-pipe them straight into a graphing library to generate real-time dashboards.
-As soon as you sell a silver car, your graphs would dynamically update to include
-statistics about silver cars.
+위의 예는 완전히 실시간으로 작동한다. document가 검색이 가능하면, 집계도 가능하다. 즉 aggregation 결과를 실시간으로 대시보드를 생성하는 그래프 라이브러리에 즉시 보낼 수 있다. 은색 자동차를 팔자마자 은색 자동차에 대한 통계를 포함하도록 그래프는 동적으로 업데이트될 것이다.
 
-Voila!  Your first aggregation!
-((("aggregations", "basic example", startref ="ix_basicex")))
-
-
-
-
-
-
-
+짜짠! 첫 번째 aggreation은 여기까지이다.
