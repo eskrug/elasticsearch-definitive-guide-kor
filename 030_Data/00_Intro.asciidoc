@@ -7,23 +7,44 @@ and bytes.  We build relationships between data elements in order to represent
 entities, or _things_ that exist in the real world.  A name and an email
 address have more meaning if we know that they belong to the same person.
 
+어떤 program을 작성하더라도, 그 목표(목표에 알맞게 데이터를 조작하는 것)은 동일하다.
+그러나 데이터는 임의의 bits와 bytes로만 구성되지는 않는다. 실제 세계에 존재하는 요소나
+_무엇(thing)_을 나타내기 위해, 데이터 요소 사이의 관계를 정립해야 한다. 이름이나 email이
+동일인의 것이라는 것을 알게 되면, 그것들은 더 많은 의미를 가지게 된다.
+
 In the real world, though, not all entities of the same type look the same.
 One person might have a home telephone number, while another person has only a
 cell-phone number, and another might have both.  One person might have three
 email addresses, while another has none. A Spanish person will probably have
 two last names, while an English person will probably have only one.
 
+실제 세계에서, 같은 유형의 요소 모두가 똑같지는 않다. 어떤 이는 집 전화번호를 가지고 있으나,
+다른 이는 휴대폰 번호를 가지고, 또 다른 이는 둘 다를 가지고 있다.
+어떤 이는 세 개의 email 주소를 가지고 있으나, 어떤 이는 가지고 있지 않다. 스페인 사람들은
+두 개의 last name을 가지고 있으나, 영국인들은 아마도 하나만 가지고 있을 것이다.
+
 One of the reasons that object-oriented programming languages are so popular
 is that objects help us represent and manipulate real-world entities with
 potentially complex data structures. So far, so good.
+
+OOP(Object Oriented Programming) 언어가 인기 있는 이유 중 하나는, 잠재적으로 복잡한
+데이터 구조를 가지고 있는, 실제 세계의 요소를 나타내고 다루는 것에, 오브젝트가 도움이 되기
+때문이다. 지금까지는 너무나 좋다.
 
 The problem comes when we need to store these entities. Traditionally, we have
 stored our data in columns and rows in a relational database, the equivalent
 of using a spreadsheet.  All the flexibility gained from using objects is lost
 because of the inflexibility of our storage medium.
 
+이러한 요소들을 저장할 때에 문제가 나타난다. 전통적으로 우리는 데이터를 spreadsheet를
+사용하는 것과 유사하게, RDB의 column과 row에 저장해왔다. 오브젝트를 사용하면서 얻은 모든
+유연성을 저장 매체의 경직성으로 인해 잃어버리게 된다.
+
 But what if we could store our objects as objects?((("objects", "storing as objects")))  Instead of modeling our
 application around the limitations of spreadsheets, we can instead focus on _using_ the data. The flexibility of objects is returned to us.
+
+그러나, 우리가 오브젝트를 오브젝트로 저장할 수 있다면 어떻게 될까? spreadsheet의 한계에 맞춰 응용프로그램을 설계하는 대신에, 실제로 데이터를 _사용하는데_ 집중할 수 있다. 오브젝트의 유연성은 돌아오게 된다.
+
 
 An _object_ is a language-specific, in-memory data structure.((("objects", "defined"))) To send it across
 the network or store it, we need to be able to represent it in some standard
@@ -32,10 +53,16 @@ is a way of representing objects in human-readable text.((("objects", "represent
 de facto standard for exchanging data in the NoSQL world. When an object has
 been serialized into JSON, it is known as a _JSON document_.((("JSON documents")))
 
+
+오브젝트는 언어 지향적이고, 메모리에 있는 데이터 구조이다. 오브젝트를 네트워크를 통해, 보내거나 저장하려면, 어떤 표준화된 형식으로 표현할 필요가 있다. 
+http://en.wikipedia.org/wiki/Json[JSON]은 사람이 읽을 수 있는 텍스트로, 오브젝트를 표현하는 방식이다. NoSQL의 세계에서 데이터 교환을 위한, 사실상의 표준이 되었다. 오브젝트가 JSON으로 표시되었을 때 이를 _JSON document_라 한다.
+
 Elasticsearch is a distributed _document_ store.((("document store, Elasticsearch as"))) It can store and retrieve
 complex data structures--serialized as JSON documents--in _real time_. In
 other words, as soon as a document has been stored in Elasticsearch, it can be
 retrieved from any node in the cluster.
+
+Elasticsearch는 분산 _document_ 저장소이다. 복잡한 데이터 구조(JSON document로 표시된)를 _실시간으로_ 저장하거나 검색할 수 있다. 즉, document가 Elasticsearch에 저장되자마자, cluster의 어떤 node에서도 검색할 수 있다.
 
 Of course, we don't need to only store data; we must also query it, en masse
 and at speed. While NoSQL solutions exist that allow us to store
@@ -43,12 +70,19 @@ objects as documents, they still require us to think about how we want to
 query our data, and which fields require an index in order to make data
 retrieval fast.
 
+물론, 저장만 하는 것이 아니다. 한꺼번에 빠르게 검색도 해야 한다. 오브젝트를 document로 저장할 수 있는 다수의 NoSQL solution이 존재하지만, 여전히 데이터를 검색하는 방법과, 데이터 검색을 빠르게 하기 위해, index에 어떤 field가 필요한지를 생각해야 한다.
+
 In Elasticsearch, _all data in every field_ is _indexed by default_.((("indexing", "in Elasticsearch"))) That is,
 every field has a dedicated inverted index for fast retrieval. And, unlike
 most other databases, it can use all of those inverted indices _in the same
 query_, to return results at breathtaking speed.
 
+Elasticsearch에서 _모든 field에 있는 모든 데이터는_ _기본적으로 색인된다_(all data in every field is indexed by default). 다시 말해서, 모든 field는 빠른 검색을 위한 전용 inverted index를 가지고 있다. 그리고 대부분의 다른 데이터베이스와 달리, _동일한 query에서_ 놀랄만한 속도로 결과를 돌려주기 위해, 이러한 inverted indices 모두를 사용할 수 있다. 준다.
+
 In this chapter, we present the APIs that we use to create, retrieve,
 update, and delete documents. For the moment, we don't care about the data
 inside our documents or how to query them. All we care about is how to store our
 documents safely in Elasticsearch and how to get them back again.
+
+
+이 장에서 document를 생성, 검색, 업데이트, 삭제하는 API에 대해 이야기할 것이다. 지금은 document 내부의 데이터나, 데이터를 검색하는 방법에 대해 관심을 갖지는 말자. 어떻게 document를 Elasticsearch에 안전하게 저장할 것인지 그리고 그것을 다시 가지고 오는 방법에 대해 집중하자.
