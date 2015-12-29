@@ -1,8 +1,12 @@
 [[get-doc]]
 === Retrieving a Document
 
+=== document를 가져오자
+
 To get the document ((("documents", "retrieving")))out of Elasticsearch, we use the same `_index`,
 `_type`, and `_id`, but the HTTP verb ((("HTTP methods", "GET")))changes to `GET`:
+
+Elasticsearch에서 document를 가져오기 위해서는, 저장 시 사용했던 _index, _type, _id을 사용해야 한다. 그러나 HTTP method는 GET으로 바꾸어야 한다.
 
 [source,sh]
 --------------------------------------------------
@@ -14,6 +18,8 @@ GET /website/blog/123?pretty
 The response includes the by-now-familiar metadata elements, plus ((("_source field", sortas="source field")))the `_source`
 field, which contains the original JSON document that we sent to Elasticsearch
 when we indexed it:
+
+응답은 이제는 익숙한 metadata에, 추가로 _source field를 포함하고 있다. _source field는 색인 시에 Elasticsearch에 전송했던, 원래의 JSON document를 포함하고 있다.
 
 [source,js]
 --------------------------------------------------
@@ -39,13 +45,22 @@ make it more readable. The `_source` field, however, isn't pretty-printed.
 Instead we get back exactly the same JSON string that we passed in.
 ====
 
+[NOTE]
+====
+위의 예처럼, 어떤 요청이든 query string 매개변수에 pretty를 더하면, Elasticsearch는 JSON 응답을 좀 더 읽기 쉽게 만들어, 보기 좋게 출력(pretty-print)한다. 그러나 _source field는 보기 좋게 출력되지 않고, 색인 시에 입력한 JSON 문자열을 정확히 똑같이 돌려준다.
+====
+
 The response to the +GET+ request includes `{"found": true}`. This confirms that
 the document was found.  ((("documents", "requesting non-existent document")))If we were to request a document that doesn't exist,
 we would still get a JSON response, but `found` would be set to `false`.
 
+GET 요청에 대한 응답은 {“found”: true}를 포함하고 있다. 이것은 document가 발견되었다는 것을 확인해 준다. 만약 존재하지 않는 document를 요청하면, found가 false로 설정된 JSON 응답이 나올 것이다.
+
 Also, the HTTP response code would be `404 Not Found` instead of `200 OK`.
 We can see this by passing the `-i` argument to `curl`, which((("curl command", "-i argument"))) causes it to
 display the response headers:
+
+또한 HTTP 응답 code는 “200 OK”가 아닌, “404 Not Found”가 될 것이다. curl에 –i 매개변수를 전달하면, 응답 header를 볼 수 있다.
 
 [source,sh]
 --------------------------------------------------
@@ -55,6 +70,8 @@ curl -i -XGET http://localhost:9200/website/blog/124?pretty
 
 
 The response now looks like this:
+
+응답은 아래와 같다.
 
 [source,js]
 --------------------------------------------------
@@ -72,10 +89,14 @@ Content-Length: 83
 
 ==== Retrieving Part of a Document
 
+==== document의 일부만 가져오자
+
 By default, a `GET` request((("documents", "retrieving part of"))) will return the whole document, as stored in the
 `_source` field. But perhaps all you are interested in is the `title` field.
 Individual fields can be ((("fields", "returning individual document fields")))((("_source field", sortas="source field")))requested by using the `_source` parameter. Multiple
 fields can be specified in a comma-separated list:
+
+기본적으로, GET 요청은 _source field에 저장되어 있는, 전체 document를 반환한다. 그런데, title field에만 관심이 있다면, _source 매개변수를 사용하여, 개별 field를 요청할 수 있다. 다중 field는 ‘,’(comma)로 구분된 목록으로 지정할 수 있다.
 
 [source,sh]
 --------------------------------------------------
@@ -86,6 +107,8 @@ GET /website/blog/123?_source=title,text
 
 The  `_source` field now contains just the fields that we requested and has
 filtered out the `date` field:
+
+이제 _source field는 요청한 field만을 포함하고 date field는 걸러졌다.
 
 [source,js]
 --------------------------------------------------
@@ -105,6 +128,8 @@ filtered out the `date` field:
 Or if you want _just_ the `_source` field without any metadata, you can use
 the `_source` endpoint:
 
+metadata 없이 _source field만 원한다면, 마지막에 _source만을 쓰면 된다.
+
 [source,sh]
 --------------------------------------------------
 GET /website/blog/123/_source
@@ -112,6 +137,8 @@ GET /website/blog/123/_source
 // SENSE: 030_Data/15_Get_document.json
 
 which returns just the following:
+
+아래와 같이 반환한다.
 
 [source,js]
 --------------------------------------------------

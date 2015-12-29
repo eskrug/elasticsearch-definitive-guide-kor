@@ -1,9 +1,13 @@
 [[cardinality]]
 === Finding Distinct Counts
 
+=== 유일한 값의 갯수를 검색하려면
+
 The first approximate aggregation provided by Elasticsearch is the `cardinality`
 metric.((("cardinality", "finding distinct counts")))((("aggregations", "approximate", "cardinality")))((("approximate algorithms", "cardinality")))((("distinct counts")))  This provides the cardinality of a field, also called a _distinct_ or
 _unique_ count. ((("unique counts"))) You may be familiar with the SQL version:
+
+Elasticsearch에서 제공되는, 첫 번째 대략적인 집계는 cardinality metric이다. 이것은 “고유한 또는 유일한 값의 수” 라고 불리기도 하는, filed의 cardinality(기수)를 제공한다. 아래 SQL 버전에 익숙할 것이다.
 
 [source, sql]
 --------
@@ -13,12 +17,21 @@ FROM cars
 
 Distinct counts are a common operation, and answer many fundamental business questions:
 
+고유한 수는 일반적인 연산이고, 많은 기본적인 비즈니스 질문에 대한 답변이다.
+
 - How many unique visitors have come to my website?
 - How many unique cars have we sold?
 - How many distinct users purchased a product each month?
 
+- website에 방문한 유일한 방문자는 몇 명인가?
+- 판매한 유일한 자동차의 수는?
+- 각 달에 제품을 구매한 유일한 사용자의 수는?
+
+
 We can use the `cardinality` metric to determine the number of car colors being
 sold at our dealership:
+
+대리점에서 판매할 자동차 색깔의 수를 결정하기 위해, cardinality metric을 사용할 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -38,6 +51,8 @@ GET /cars/transactions/_search?search_type=count
 This returns a minimal response showing that we have sold three different-colored
 cars:
 
+이 query는 3가지 다른 색상의 자동차를 판매했다는 것을 보여주는 응답을 반환한다.
+
 [source,js]
 --------------------------------------------------
 ...
@@ -51,6 +66,8 @@ cars:
 
 We can make our example more useful:  how many colors were sold each month?  For
 that metric, we just nest the `cardinality` metric under ((("date histograms, building")))a `date_histogram`:
+
+좀 더 유용한 예제를 만들어 보자. 각 달에 팔린 색상의 수는? 해당 통계를 위하여, date_histogram 아래에 cardinality metric을 중첩하면 된다.
 
 [source,js]
 --------------------------------------------------
@@ -81,9 +98,14 @@ algorithm. ((("cardinality", "understanding the tradeoffs"))) It is based on the
 hashing your input and using the bits from the hash to make probabilistic estimations
 on the cardinality.
 
+==== 균형을 이해하자
+이 장의 초반에 언급했듯이, cardinality metric은 대략적인 알고리즘이다. HyperLogLog++ (HLL) 알고리즘을 기반으로 한다. HLL은 입력을 hashing하고, cardinality에 대한 확률론적 추정을 위해, hash에서 bit를 사용함으로써 동작한다.
+
 You don't need to understand the technical details (although if you're interested,
 the paper is a great read!), but you ((("memory usage", "cardinality metric")))should be aware of the _properties_ of the
 algorithm:
+
+기술적인 세부사항(관심이 있다면, 이 논문은 읽을만한 아주 좋은 논문이다)을 이해할 필요는 없다. 하지만 알고리즘의 특성을 알고 있어야 한다.
 
 - Configurable precision, which controls memory usage (more precise
 == more memory).
@@ -91,9 +113,16 @@ algorithm:
 - Fixed memory usage. Whether there are thousands or billions of unique
 values, memory usage depends on only the configured precision.
 
+- 메모리 사용량을 제어하는, 정밀도의 설정. 더 정확 == 더 많은 메모리
+- 낮은 cardinality 집합에 대한 우수한 정확도
+- 고정 메모리 사용량. 수천 또는 수십억의 고유한 값이 있어도 관계없다. 메모리 사용량은 설정된 정밀도에 따라 달라진다.
+
+
 To configure the precision, you must specify the `precision_threshold` parameter.((("precision_threshold parameter (cardinality metric)")))
 This threshold defines the point under which cardinalities are expected to be very
 close to accurate. Consider this example:
+
+정밀도를 설정하기 위해, precision_threshold 매개변수를 지정해야 한다. 이 임계 값(threshold)은 정확함에 매우 근접할 것으로 기대되는 cardinality, 아래 지점을 정의한다. 아래 예제를 살펴보자.
 
 [source,js]
 --------------------------------------------------
@@ -113,17 +142,25 @@ GET /cars/transactions/_search?search_type=count
 <1> `precision_threshold` accepts a number from 0&#x2013;40,000.  Larger values
 are treated as equivalent to 40,000.
 
+<1> `precision_threshold`는 0 ~ 40,000 사이의 숫자를 입력할 수 있다. 더 큰 값은 40,000과 동일하게 처리한다.
+
 This example will ensure that fields with 100 or fewer distinct values will be extremely accurate.
 Although not guaranteed by the algorithm, if a cardinality is under the threshold,
 it is almost always 100% accurate.  Cardinalities above this will begin to trade
 accuracy for memory savings, and a little error will creep into the metric.
 
+100개 이하의 고유한 값이 있는 field는 매우 정확할 거라고 보장한다. 비록 알고리즘이 보장하지는 않지만, cardinality가 임계 값 아래일 경우, 거의 항상 100% 정확하다. 이 이상의 cardinality는 메모리 절약과 약간의 오차를 거래하기 시작하고, 약간의 오차가 metric에 나타날 것이다.
+
 For a given threshold, the HLL data-structure will use about
 `precision_threshold * 8` bytes of memory.  So you must balance how much memory
 you are willing to sacrifice for additional accuracy.
 
+주어진 임계 값에 대해, HLL 데이터 구조는 precision_threshold * 8 byte의 메모리를 사용할 것이다. 따라서, 추가적인 정확성과 필요한 메모리의 양의 균형을 맞추어야 한다.
+
 Practically speaking, a threshold of `100` maintains an error under 5% even when
 counting millions of unique values.
+
+실질적으로 말하자면, 임계 값 100은, 수백만 개의 고유한 값을 계산하는 경우에도, 5% 미만의 오차를 유지한다.
 
 ==== Optimizing for Speed
 If you want a distinct count, you _usually_ want to query your entire dataset
@@ -131,10 +168,15 @@ If you want a distinct count, you _usually_ want to query your entire dataset
 for obvious reasons. HyperLogLog is very fast already--it simply
 hashes your data and does some bit-twiddling.((("HyperLogLog (HLL) algorithm")))((("HLL (HyperLogLog) algorithm")))
 
+==== 속도의 최적화
+유일한 값의 수를 얻으려면, 일반적으로 전체 데이터 집합(또는 거의 모든 데이터)를 검색할 것이다. 모든 데이터에 대한 어떤 연산은 분명한 이유를 가지고, 신속하게 실행되어야 한다. HyperLolLog는 이미 매우 빠르다. 단순히 데이터를 hash하고, 약간의 bit 변형을 수행한다.
+
 But if speed is important to you, we can optimize it a little bit further.
 Since HLL simply needs the hash of the field, we can precompute that hash at
 index time.((("hashes, pre-computing for cardinality metric")))  When the query executes, we can skip the hash computation and load
 the value directly out of fielddata.
+
+그러나, 속도가 매우 중요하다면, 데이터를 조금 더 최적화할 수 있다. HLL은 단순히 field의 hash가 필요하기 때문에, 색인 시에 hash를 미리 계산할 수 있다. query를 실행할 때, hash 계산을 생략하고, fielddata에서 값을 바로 읽을 수 있다.
 
 [NOTE]
 =========================
@@ -153,8 +195,17 @@ precomputing simply shifts the cost to index time.  You still pay the price;
 you just choose _when_ to pay it.
 =========================
 
+[NOTE]
+=========================
+hash를 미리 계산하는 것은 매우 큰 field 그리고/또는 높은 cardinality field일 경우에만 유용하다. 이런 field에서 hash를 계산하는 것은, query시에 무시할 수 없다.
+그러나, 숫자 field의 hash는 매우 빠르다. 그리고, 원래의 숫자를 저장하는 것은, 같거나 적은 메모리를 필요로 한다. 이것은 낮은 cardinality를 가지는 문자열 field에서도 마찬가지이다. hash는 고유한 값 별로 한번만 계산된다고 보장하는 내부 최적화가 있다.
+기본적으로, hash를 미리 계산하는 것은 모든 field를 더 빠르게 한다고 보장할 수는 없다. 높은 cardinality 그리고/또는 매우 큰 문자열을 가진 field에서만 더 빠르다. 그리고, 미리 계산하는 것은, 단순히 비용을 색인 시로 옮긴 것뿐이라는 것을 기억하자. 여전히 비용을 지불해야 한다. 단지 언제 지불할지를 선택할 뿐이다.
+=========================
+
 To do this, we need to add a new multifield to our data.  We'll delete our index,
 add a new mapping that includes the hashed field, and then reindex:
+
+이를 위해, 데이터에 새로운 다중 field를 추가해야 한다. index를 지우고, hashed field를 포함하는 새로운 mapping을 추가하자. 그리고, 다시 색인하자.
 
 [source,js]
 ----
@@ -199,8 +250,12 @@ POST /cars/transactions/_bulk
 // SENSE: 300_Aggregations/60_cardinality.json
 <1> This multifield is of type `murmur3`, which is a hashing function.
 
+<1> 이 다중 field는 murmur3인 type이다. murmur3은 hashing function이다.
+
 Now when we run an aggregation, we use the `color.hash` field instead of the
 `color` field:
+
+이제, 집계를 실행할 때, “color” field 대신에, “color.hash” field를 사용한다.
 
 [source,js]
 --------------------------------------------------
@@ -218,11 +273,17 @@ GET /cars/transactions/_search?search_type=count
 // SENSE: 300_Aggregations/60_cardinality.json
 <1> Notice that we specify the hashed multifield, rather than the original.
 
+<1> 원래 field가 아닌 hashed multi-field를 지정했다는 것에 주목하자.
+
 Now the `cardinality` metric will load the values (the precomputed hashes)
 from `"color.hash"` and use those in place of dynamically hashing the original
 value.
+
+이제, cardinality metric은 “color.hash”에서 값(예: 미리 계산된 hash)을 가져온다. 그리고, 원래의 값을 동적으로 hashing하는 대신, 그 값을 사용할 것이다.
 
 The savings per document is small, but if hashing each field adds 10 nanoseconds and your aggregation touches 100 million documents, that adds 1 second per
 query.  If you find yourself using `cardinality` across many documents,
 perform some profiling to see if precomputing hashes makes sense for your
 deployment.
+
+document당 절약되는 시간은 작다. 그러나 각 field를 hashing하는데 10ns가 추가되고, 집계가 1억건의 document를 읽어야 한다면, query당 1초가 추가된다. 많은 document에 대해 cardinality를 사용하고 있다면, 미리 계산하는 hash가 합리적이라는 것을 알아보기 위해, 약간의 profiling을 수행해 보자.

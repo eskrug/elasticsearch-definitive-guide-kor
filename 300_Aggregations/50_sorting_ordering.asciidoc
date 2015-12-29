@@ -1,21 +1,33 @@
 
 == Sorting Multivalue Buckets
 
+== 다중 값 bucket의 정렬
+
 Multivalue buckets--the `terms`, `histogram`, and ++date_histogram++&#x2014;dynamically produce many buckets.((("sorting", "of multivalue buckets")))((("buckets", "multivalue, sorting")))((("aggregations", "sorting multivalue buckets")))  How does Elasticsearch decide the order that
 these buckets are presented to the user?
+
+다중 값 bucket(terms, histogram, date_histogram)은 동적으로 많은 bucket을 생성한다. Elasticsearch에서, 이런 bucket이 사용자에게 표시되는 순서를 Elasticsearch는 어떻게 결정할까?
 
 By default, buckets are ordered by `doc_count` in((("doc_count", "buckets ordered by"))) descending order.  This is a
 good default because often we want to find the documents that maximize some
 criteria: price, population, frequency. But sometimes you'll want to modify this sort order, and there are a few ways to
 do it, depending on the bucket.
 
+기본적으로, bucket은 doc_count를 기준으로, 내림차순으로 정렬된다. 어떤 기준(가격, 인구, 횟수 등)의 최대값을 가진 document를 찾으려 하기 때문에, 이것은 괜찮은 기본값이다. 하지만, 가끔은 이 정렬 순서를 바꿔야 하는 경우가 있다. bucket에 따라 몇 가지 방법이 있다.
+
 === Intrinsic Sorts
+
+=== 기본 정렬
 
 These sort modes are _intrinsic_ to the bucket: they operate on data that bucket((("sorting", "of multivalue buckets", "intrinsic sorts")))
 generates, such as `doc_count`.((("buckets", "multivalue, sorting", "intrinsic sorts")))  They share the same syntax but differ slightly
 depending on the bucket being used.
 
+이 정렬 방식은 bucket의 기본이다. doc_count 처럼, bucket이 생성한 데이터에 따라 동작한다. 동일한 문법을 공유하지만, 사용된 bucket에 따라 약간 다르다.
+
 Let's perform a `terms` aggregation but sort by `doc_count`, in ascending order:
+
+terms 집계를 해보자. 그러나 doc_count를 기준으로, 오름차순으로 정렬하자.
 
 [source,js]
 --------------------------------------------------
@@ -36,8 +48,12 @@ GET /cars/transactions/_search?search_type=count
 // SENSE: 300_Aggregations/50_sorting_ordering.json
 <1> Using the `_count` keyword, we can sort by `doc_count`, in ascending order.
 
+<1> _count keyword를 사용하여, doc_count 기준으로, 오름차순으로 정렬할 수 있다.
+
 We introduce an +order+ object((("order parameter (aggregations)"))) into the aggregation, which allows us to sort on
 one of several values:
+
+집계에서 order 오브젝트를 소개한다. 이것을 이용하여, 아래의 여러 가지 값 중 하나를 기준으로, 정렬할 수 있다.
 
 `_count`::
 Sort by document count.  Works with `terms`, `histogram`, `date_histogram`.
@@ -49,14 +65,30 @@ Sort by the string value of a term alphabetically.  Works only with `terms`.
 Sort by the numeric value of each bucket's key (conceptually similar to `_term`).
 Works only with `histogram` and `date_histogram`.
 
+`_count`::
+document 수로 장렬. terms, histogram, date_histogram과 함께 동작
+
+`_term`::
+단어의 문자열 값을 알파벳 순으로 정렬. terms의 경우에만 동작
+
+`_key`::
+각 bucket의 key(개념적으로 _term과 유사)의 숫자 값으로 정렬.
+histogram, date_histogram의 경우에만 동작
+
 === Sorting by a Metric
+
+=== metric에 의한 정렬
 
 Often, you'll find yourself wanting to sort based on a metric's calculated value.((("buckets", "multivalue, sorting", "by a metric")))((("metrics", "sorting multivalue buckets by")))((("sorting", "of multivalue buckets", "sorting by a metric")))
 For our car sales analytics dashboard, we may want to build a bar chart of
 sales by car color, but order the bars by the average price, ascending.
 
+metric의 계산된 값을 기준으로 정렬해야 하는 경우가 있다. 자동차 판매 분석 대시보드에서, 자동차 색상으로, 판매 막대 그래프를 만든다고 가정해 보자. 그런데, 막대 그래프의 순서는 평균가의 오름차순이다.
+
 We can do this by adding a metric to our bucket, and then referencing that
 metric from the +order+ parameter:
+
+bucket에 metric을 추가하고, 해당 metric이 order 매개변수를 참조하면 가능하다.
 
 [source,js]
 --------------------------------------------------
@@ -83,13 +115,20 @@ GET /cars/transactions/_search?search_type=count
 <1> The average price is calculated for each bucket.
 <2> Then the buckets are ordered by the calculated average in ascending order.
 
+<1> 평균 가격은 각 bucket별로 계산된다.
+<2> 그리고, bucket은 계산된 평균 가격을 기준으로, 오름차순으로 정렬된다.
+
 This lets you override the sort order with any metric, simply by referencing
 the name of the metric.  Some metrics, however, emit multiple values.  The
 `extended_stats` metric is a good example: it provides half a dozen individual
 metrics.
 
+이것은 단순히 metric의 이름을 참조함으로써, 다른 metric의 정렬 순서보다 우선시된다. 그러나, 일부 metric은 다중 값을 출력한다. extended_stats metric이 좋은 예이다. 그것은 6개 정도의 개별 metric을 제공한다.
+
 If you want to sort on a multivalue metric,((("metrics", "sorting multivalue buckets by", "multivalue metric"))) you just need to use the
 dot-path to the metric of interest:
+
+다중 값 metric을 정렬해야 한다면, 관심 있는 metric의 점 경로(dot-path)를 사용해야 한다.
 
 [source,js]
 --------------------------------------------------
@@ -115,26 +154,41 @@ GET /cars/transactions/_search?search_type=count
 // SENSE: 300_Aggregations/50_sorting_ordering.json
 <1> Using dot notation, we can sort on the metric we are interested in.
 
+<1> 점 표기법을 사용하여, 관심 있는 metric을 기준으로, 정렬할 수 있다.
+
 In this example we are sorting on the variance of each bucket, so that colors
 with the least variance in price will appear before those that have more variance.
 
+이 예제에서는, 각 bucket의 분산(variance)으로 정렬하고 있다. 가격의 분산이 최소인 색상이, 분산이 더 많은 색상보다, 먼저 나타날 것이다.
+
 === Sorting Based on "Deep" Metrics
+
+=== "깊은(deep)" metric을 기준으로 한 정렬
 
 In the prior examples, the metric was a direct child of the bucket.  An average
 price was calculated for each term.((("buckets", "multivalue, sorting", "on deeper, nested metrics")))((("metrics", "sorting multivalue buckets by", "deeper, nested metrics")))  It is possible to sort on _deeper_ metrics,
 which are grandchildren or great-grandchildren of the bucket--with some limitations.
 
+이전의 예제에서, metric은 bucket의 직접적인 자식이었다. 평균 가격은 각 단어에 대해 계산한 것이었다. “더 깊은(deeper)” metric으로 정렬하는 것이 가능하다. 약간의 제한이 있지만, bucket의 손자, 증손자도 가능하다.
+
 You can define a path to a deeper, nested metric by using angle brackets (`>`), like
 so: `my_bucket>another_bucket>metric`.
+
+아래처럼, `>`(angle brackets)을 사용하여, 더 깊은 nested metric으로, 경로(path)를 지정할 수 있다.
+`my_bucket>another_bucket>metric`
 
 The caveat is that each nested bucket in the path must be a _single-value_ bucket.
 A `filter` bucket produces((("filter bucket"))) a single bucket:  all documents that match the
 filtering criteria.  Multivalue buckets (such as `terms`) generate many
 dynamic buckets, which makes it impossible to specify a deterministic path.
 
+주의할 점은, 경로에 있는 각각의 중첩된 bucket은 반드시 “단일 값” bucket이어야 한다. filter bucket은 단일 bucket(필터링 기준에 일치하는 모든 document)을 생성한다. 다중 값 bucket(terms 같은)은 많은 동적인 bucket을 생성한다. 따라서 확정적인 경로를 지정할 수 없다.
+
 Currently, there are only three single-value buckets: `filter`, `global`((("global bucket"))), and `reverse_nested`.  As
 a quick example, let's build a histogram of car prices, but order the buckets
 by the variance in price of red and green (but not blue) cars in each price range:((("histograms", "buckets generated by, sorting on  a deep metric")))
+
+현재로서는, 3개의 단일-값 bucket(filter, global, reverse_nested)이 있다. 간단한 예로, 자동차 판매 가격의 histogram을 구축하자. 단, bucket의 순서는, 각 가격 범위에서 빨강과 녹색(파랑이 아닌) 자동차의 가격 분산으로 한다.
 
 [source,js]
 --------------------------------------------------
@@ -166,10 +220,15 @@ GET /cars/transactions/_search?search_type=count
 <2> Because we are using a single-value `filter`, we can use nested sorting.
 <3> Sort on the stats generated by this metric.
 
+<1> histogram에 의해 생성한 bucket을, nested metric의 variance에 따라, 정렬
+<2> 단일-값인 filter를 사용했기 때문에, 중첩된 정렬을 사용할 수 있다.
+<3> metric으로 생성한 stats로 정렬
+
+
 In this example, you can see that we are accessing a nested metric.  The `stats`
 metric is a child of `red_green_cars`, which is in turn a child of `colors`.  To
 sort on that metric, we define the path as `red_green_cars>stats.variance`.
 This is allowed because the `filter` bucket is a single-value bucket.
 
-
+이 예제에서, nested metric에 접근하는 것을 볼 수 있었다. stats metric은 “red_green_car”의 자식이다. 그리고 차례대로 “colors”의 자식이다. metric으로 정렬하기 위해, 경로를 "red_green_cars>stats.variance"로 정의하였다. 이것은 filter bucket이 단일-값 bucket이기 때문에 가능하다.
 

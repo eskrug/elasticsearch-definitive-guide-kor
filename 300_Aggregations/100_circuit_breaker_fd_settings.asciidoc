@@ -1,25 +1,35 @@
 
 === Limiting Memory Usage
 
+=== 메모리 사용의 제한
+
 In order for aggregations (or any operation that requires access to field
 values) to be fast, ((("aggregations", "limiting memory usage")))access to fielddata must be fast, which is why it is
 loaded into memory. ((("fielddata")))((("memory usage", "limiting for aggregations", id="ix_memagg"))) But loading too much data into memory will cause slow
 garbage collections as the JVM tries to find extra space in the heap, or
 possibly even an OutOfMemory exception.
 
+집계(또는 field 값을 액세스해야 하는 모든 연산)를 빠르게 하기 위해서는, fielddata가 메모리에 로드되어 있기 때문에, fielddata를 액세스하면 빠를 것이다. 그러나, 너무 많은 데이터를 메모리에 로드하면, JVM이 heap의 여유 공간을 찾으려 하기 때문에, garbage collection을 느리게 하는 원인이 되거나, 심지어 OutofMemory Exception이 발생할 수 있다.
+
 It may surprise you to find that Elasticsearch does not load into fielddata
 just the values for the documents that match your query. It loads the values
 for _all documents in your index_, even documents with a different `_type`!
+
+Elasticsearch가 query에 일치하는 document에 대한 값만을, fielddata에 로드 하는 것은 아니다. index에 있는 모든 document, 심지어 다른 _type의 document에 대한 값도 로드한다.
 
 The logic is: if you need access to documents X, Y, and Z for this query, you
 will probably need access to other documents in the next query.  It is cheaper
 to load all values once, and to _keep them in memory_, than to have to scan
 the inverted index on every request.
 
+어떤 query로 document X, Y, Z에 액세스해야 한다면, 다음 query에서는 다른 document에 액세스해야 할 것이다. 모든 값을 한번에 로드 하고, 그것을 메모리에 유지하는 것이, 모든 요청을 inverted index에서 찾는 것보다, 비용이 더 싸다.
+
 The JVM heap ((("JVM (Java Virtual Machine)", "heap usage, fielddata and")))is a limited resource that should be used wisely. A number of
 mechanisms exist to limit the impact of fielddata on heap usage. These limits
 are important because abuse of the heap will cause node instability (thanks to
 slow garbage collections) or even node death (with an OutOfMemory exception).
+
+JVM의 heap은 현명하게 사용해야 하는, 제한된 자원이다. fielddata의 heap 사용에 미치는 영향을 제한하는, 많은 메커니즘이 존재한다. heap의 남용은 node의 불안정(느린 garbage collection 덕분에)이나, 다운(OutofMemory Exception)의 원인이기 때문에, 이런 제한은 중요하다. 
 
 .Choosing a Heap Size
 ******************************************
@@ -44,8 +54,23 @@ This limit has a direct impact on the amount of memory that can be devoted to fi
 
 ******************************************
 
+.heap 크기의 선택
+******************************************
+
+$ES_HEAP_SIZE 환경 변수를 가지고, Elasticsearch의 heap size를 설정할 때 적용할, 두 가지 규칙이 있다.
+	이용 가능한 RAM의 50% 이상은 불가
+Lucene은 kernel에 의해 관리되는, filesystem cache를 잘 사용한다. filesystem cache가 충분하지 않으면, 성능이 저하된다.
+	32GB 이상은 불가
+heap이 32GB보다 적다면, JVM은 압축 포인터(compressed pointer)사용할 수 있는데, 이는 많은 메모리를 절약한다. pointer당 8byte가 아닌 4byte
+heap이 32GB에서 34GB로 증가되면, 모든 포인터가 두 배의 공간을 가지기 때문에, 이용할 수 있는 메모리가 더 적어진다는 것을 의미한다. 또한 더 큰 heap은 garbage collection에 더 많은 비용이 들고, node를 불안정하게 할 수 있다.
+이 제한은, fielddata에 사용될 수 있는 많은 메모리에, 직접적인 영향을 준다.
+
+******************************************
+
 [[fielddata-size]]
 ==== Fielddata Size
+
+==== Fielddata의 크기
 
 The `indices.fielddata.cache.size` controls how much heap space is allocated
 to fielddata.((("fielddata", "size")))((("aggregations", "limiting memory usage", "fielddata size")))  When you run a query that requires access to new field values,
@@ -53,16 +78,24 @@ it will load the values into memory and then try to add them to fielddata. If
 the resulting fielddata size  would exceed the specified `size`, other
 values would be evicted in order to make space.
 
+indices.fielddata.cache.size는 fielddata에 할당되는 heap 공간의 크기를 제어한다. 새로운 field 값에 액세스하는 것이 필요한, query를 실행하면, 메모리에 값을 로드하고, fielddata에 그것을 추가한다. 얻어진 fielddata의 크기가 지정된 size를 초과하면, 공간을 마련하기 위해, 다른 값들은 제거될 것이다.
+
 By default, this setting is _unbounded_&#x2014;Elasticsearch will never evict data
 from fielddata.
+
+기본적으로 이 설정은 무제한이다. Elasticsearch는 절대로 fielddata에서 다른 값들을 제거하지 않는다.
 
 This default was chosen deliberately: fielddata is not a transient cache. It
 is an in-memory data structure that must be accessible for fast execution, and
 it is expensive to build. If you have to reload data for every request,
 performance is going to be awful.
 
+이 기본값은 고의적으로 선택되었다. fielddata는 일시적인 cache가 아니다. 그것은 빠른 실행을 위해, 액세스 가능한 메모리에 있는 데이터 구조이고, 구축 비용이 비싸다. 모든 요청에 대해 데이터를 다시 로드 한다면, 성능은 끔찍해질 것이다.
+
 A bounded size forces the data structure to evict data.  We will look at when
 to set this value, but first a warning:
+
+제한된 크기는 데이터 구조에서 데이터를 강제로 제거한다. 아래에서 이 값을 설정하여 검토할 것이다. 하지만 먼저 주의할 점이 있다.
 
 [WARNING]
 =======================================
@@ -75,6 +108,14 @@ amount of garbage in memory, which must be garbage collected later on.
 
 =======================================
 
+[WARNING]
+=======================================
+이 설정은 보호장치이지, 부족한 메모리에 대한 해결책이 아니다.
+
+fielddata를 메모리에 상주시킬 만큼, 메모리가 충분하지 않다면, Elasticsearch는 항상 디스크에서 데이터를 다시 로드 해야 하고, 공간을 만들기 위해 다른 데이터를 제거해야 한다. 제거는 많은 디스크 I/O를 가져오고, 메모리에 많은 양의 garbage를 만들어낸다. 이를 나중에 garbage collection을 통해 정리해야 한다.
+
+=======================================
+
 Imagine that you are indexing logs, using a new index every day.  Normally you
 are interested in data from only the last day or two.  Although you keep older
 indices around, you seldom need to query them.  However, with the default
@@ -83,12 +124,18 @@ will just keep on growing until you trip the fielddata circuit breaker (see
 <<circuit-breaker>>), which will prevent you from loading any more
 fielddata.
 
+매일 새로운 index를 사용하여, log를 색인 하는 작업을 가정해 보자. 일반적으로 하루나 이틀 전의 데이터에만 관심을 가지게 된다. 과거의 index를 보관하겠지만, 그들은 거의 조회되지 않는다. 그러나, 기본 설정으로 인해, 과거 index의 fielddata는 절대 제거되지 않는다. fielddata에 circuit breaker(circuit breaker – 자동 차단기, p.472 참조)가 작동될 때까지, 증가를 계속할 것이다. 이것은 더 이상의 fielddata가 로드되는 것을 방지한다.
+
 At that point, you're stuck. While you can still run queries that access
 fielddata from the old indices, you can't load any new values.  Instead, we
 should evict old values to make space for the new values.
 
+이 시점에서 문제가 발생한다. 과거 index의 fielddata를 액세스하는 query를 실행할 수 있지만, 새로운 값을 로드할 수는 없다. 새로운 값을 위한 공간을 만들기 위해, 기존 값을 제거해야 한다.
+
 To prevent this scenario, place an upper limit on the fielddata by adding this
 setting to the `config/elasticsearch.yml` file:
+
+이런 시나리오를 방지하기 위해, config/elasticsearch.yml file에, 아래 설정을 추가하여, fielddata의 상한선을 둘 수 있다.
 
 [source,yaml]
 -----------------------------
@@ -96,9 +143,13 @@ indices.fielddata.cache.size:  40% <1>
 -----------------------------
 <1> Can be set to a percentage of the heap size, or a concrete
     value like `5gb`
+	
+<1> heap 크기의 비율이나, 5GB같은 고정 값을 설정할 수 있다.	
 
 With this setting in place, the least recently used fielddata will be evicted
 to make space for newly loaded data.((("fielddata", "expiry")))
+
+이 설정을 하면, 최소한, 최근에 사용된 fielddata는 새로 로드되는 데이터를 위한, 공간을 만들기 위하여, 제거될 것이다.
 
 [WARNING]
 ====
@@ -121,14 +172,32 @@ recommended in various articles on the Internet as a good performance tip.
 It is not. Never use it!
 ====
 
+[WARNING]
+====
+
+online에서 볼 수 있는 다른 설정(indices.fielddata.cache.expire)이 있다.
+이 설정을 절대로 사용하지 말라고 부탁한다. 이것은 미래에는 더 이상 사용되지 않을 것이다.
+이 설정은 expire보다 더 오래된 값을, 그 값의 사용 여부에 관계없이 fielddata에서 제거할 것이다.
+이것은 성능에 끔찍한 영향을 준다. 제거에는 많은 비용이 들어가는데, 이것은 실질적인 이점도 없이, 일부러 실질적인 제거를 계획한다.
+이 설정을 사용할 타당한 이유가 없다. 문자 그대로, 가상의 유용한 상황을 이론화할 수도 없다. 그것은 현재, 과거 버전과의 호환성 때문에 존재한다. 슬프게도, 이 책에서 그 설정을 언급한 이후로, 인터넷에서 “좋은 성능 팁”으로, 다양한 글에서 추천되고 있다.
+그렇지 않다. 절대 사용하지 말라.
+
+====
+
 [[monitoring-fielddata]]
 ==== Monitoring fielddata
+
+==== Fielddata 모니터링
 
 It is important to keep a close watch on how much memory((("fielddata", "monitoring")))((("aggregations", "limiting memory usage", "moitoring fielddata"))) is being used by
 fielddata, and whether any data is being evicted.  High eviction counts can
 indicate a serious resource issue and a reason for poor performance.
 
+fielddata에 얼마나 많은 메모리가 사용되고 있는지, 그리고 어떤 데이터가 제거되는지, 자세히 관찰해야 한다. 높은 제거 횟수는 심각한 자원 이슈와 성능 저하의 원인을 가리킨다.
+
 Fielddata usage can be monitored:
+
+fielddata의 사용량은 다음 API로 관찰 할 수 있다.
 
 * per-index using the http://www.elastic.co/guide/en/elasticsearch/reference/current/indices-stats.html[`indices-stats` API]:
 +
@@ -151,16 +220,43 @@ GET /_nodes/stats/indices/fielddata?fields=*
 GET /_nodes/stats/indices/fielddata?level=indices&fields=*
 -------------------------------
 
+* http://www.elastic.co/guide/en/elasticsearch/reference/current/indices-stats.html[`indices-stats` API]를 이용한 index별 관찰:
++
+[source,json]
+-------------------------------
+GET /_stats/fielddata?fields=*
+-------------------------------
+
+* http://bit.ly/1586yDn[`nodes-stats` API]를 이용한 index별 관찰:
++
+[source,json]
+-------------------------------
+GET /_nodes/stats/indices/fielddata?fields=*
+-------------------------------
+
+* 또는 node별, index 별 관찰
+
+[source,json]
+-------------------------------
+GET /_nodes/stats/indices/fielddata?level=indices&fields=*
+-------------------------------
+
 By setting `?fields=*`, the memory usage is broken down for each field.
+
+`?fields=*`를 설정하면, 메모리 사용량은 각 field로 세분화된다.
 
 
 [[circuit-breaker]]
 ==== Circuit Breaker
 
+==== 자동 차단기
+
 An astute reader might have noticed a problem with the fielddata size settings.
 fielddata size is checked _after_ the data is loaded.((("aggregations", "limiting memory usage", "fielddata circuit breaker")))  What happens if a query
 arrives that tries to load more into fielddata than available memory?  The
 answer is ugly: you would get an OutOfMemoryException.((("OutOfMemoryException")))((("circuit breakers")))
+
+눈치 빠른 독자는, fielddata 크기 설정에 문제가 있음을 알 수 있을 것이다. fielddata 크기는 데이터가 로드된 후에 확인된다. fielddata에, 이용할 수 있는 메모리보다 더 많이 로드 해야 하는 query가 오면, 어떻게 될까? 당연히, OutOfMemeoy Exception이 발생할 것이다.
 
 Elasticsearch includes a _fielddata circuit breaker_ that is designed to deal
 with this situation.((("fielddata circuit breaker")))  The circuit breaker estimates the memory requirements of
@@ -168,10 +264,14 @@ a query by introspecting the fields involved (their type, cardinality, size,
 and so forth). It then checks to see whether loading the required fielddata would push
 the total fielddata size over the configured percentage of the heap.
 
+Elasticsearch는 이런 상황을 처리하기 위하여 설계된, fielddata circuit breaker를 가지고 있다. circuit breaker는 관련된 field(type, cardinality, size 등)를 가로채, query에 필요한 메모리를 추정한다. 그 다음에, 필요한 fielddata를 총 fielddata의 크기에 넣으면, 설정된 heap의 비율 이상인지를 알아내기 위해 확인한다.
+
 If the estimated query size is larger than the limit, the circuit breaker is
 _tripped_ and the query will be aborted and return an exception.  This happens
 _before_ data is loaded, which means that you won't hit an
 OutOfMemoryException.
+
+추정된 query 크기가 한계보다 더 크면, circuit breaker가 작동되고, query는 중단되고 exception을 반환한다. 이것은 데이터가 로드되기 전에 일어난다. 즉, OutOfMemory Exception이 발생하지 않는다.
 
 .Available Circuit Breakers
 ***************************************
@@ -198,8 +298,29 @@ that memory limits are not exceeded:
 
 ***************************************
 
+.이용 가능한 Circuit Breakers
+***************************************
+
+Elasticsearch는 circuit breaker를 여러 개 가지고 있다. 그것 모두는 메모리 한계를 초과하지 않도록 보장한다.
+
+`indices.breaker.fielddata.limit`::
+
+   fielddata circuit breaker는 기본적으로, fielddata 의 크기를 heap의 60%로 제한한다. 
+
+`indices.breaker.request.limit`::
+
+    request circuit breaker는 요청의 다른 부분을 완성하는데 필요한 구조(예: 집계 bucket의 생성)의 크기를 추정하고, 기본적으로, 그들을 heap의 40%로 제한한다.
+
+`indices.breaker.total.limit`::
+
+    total circuit breaker는 request circuit breaker와 fielddata circuit breaker를 감싸고 있다. 기본적으로, 위의 둘의 조합이 heap의 70% 이상을 사용하지 않도록 한다.
+
+***************************************
+
 The circuit breaker limits can be specified in the `config/elasticsearch.yml`
 file, or can be updated dynamically on a live cluster:
+
+circuit breaker 제한은 config/elasticsearch.yml file에서 지정하거나, 동작하고 있는 cluster에 동적으로 업데이트될 수 있다.
 
 [source,js]
 ----
@@ -212,6 +333,7 @@ PUT /_cluster/settings
 ----
 <1> The limit is a percentage of the heap.
 
+<1> 제한은 heap의 백분율로 나타낸다.
 
 It is best to configure the circuit breaker with a relatively conservative
 value. Remember that fielddata needs to share the heap with the `request`
@@ -221,10 +343,14 @@ this reason, it defaults to a fairly conservative 60%.  Overly optimistic
 settings can cause potential OOM exceptions, which will take down an entire
 node.
 
+상대적으로 보수적인 값으로 circuit breaker를 설정하는 것이 가장 좋다. fielddata는, request circuit breaker, 색인 메모리 버퍼, filter cache, 열려 있는 indices를 위한 Lucene의 데이터 구조 그리고 다양한 임시 구조와, heap을 공유해야 한다는 점을 기억하자. 이런 이유로, 상당히 보수적인 60%가 기본이다. 지나치게 낙관적인 설정은 잠재적으로 OutOfMemory Exception을 발생시킬 수 있다. 이는 전체 node를 다운시킬 것이다.
+
 On the other hand, an overly conservative value will simply return a query
 exception that can be handled by your application.  An exception is better
 than a crash. These exceptions should also encourage you to reassess your
 query: why _does_ a single query need more than 60% of the heap?
+
+반면에, 지나치게 보수적인 값은 단순하게 응용프로그램에서 처리될 수 있는 query를 예외로 반환할 것이다. exception이 crash보다 더 낫다. 이러한 예외는 query를 다시 검토할 수 있는 기회가 된다. 왜 이런 query가 heap의 60% 이상을 사용할까?
 
 [TIP]
 ==================================================
@@ -237,6 +363,13 @@ circuit breaker limit _must_ be higher than the cache size.
 
 ==================================================
 
+[TIP]
+==================================================
+
+fielddata size – fielddata의 크기(p470)에서, 기존의 사용되지 않은 fielddata를 제거하기 위해, fielddata 크기에 제한을 추가하는 것에 대해 이야기했다. indices.fielddata.cache.size와 indices.breaker.fielddata.limit 사이의 관계는 중요하다. circuit breaker 제한이 cache 크기보다 더 작으면, 데이터는 제거되지 않을 것이다. 정상적으로 동작하기 위해서는 circuit breaker 제한이 cache 크기보다 더 커야 한다.
+
+==================================================
+
 It is important to note that the circuit breaker compares estimated query size
 against the total heap size, _not_ against the actual amount of heap memory
 used.  This is done for a variety of technical reasons (for example, the heap may look
@@ -244,3 +377,5 @@ full but is actually just garbage waiting to be collected, which is hard to
 estimate properly). But as the end user, this means the setting needs to be
 conservative, since it is comparing against total heap, not _free_ heap.
 ((("memory usage", "limiting for aggregations", startref ="ix_memagg")))
+
+circuit breaker가 추정된 query 크기를, 실제 사용된 heap 메모리의 양이 아닌, heap의 총 크기와 비교한다는 점은 중요하다. 다양한 기술적인 이유 때문에 이렇게 동작한다. 예를 들자면, heap이 가득 찬 것으로 보이지만, 실제로는 garbage가 수집될 것을 기다리고 있다. 이것을 적절하게 추정하는 것은 어렵다. 그러나, 최종 사용자로서는 이것이 보수적이어야 한다는 의미이다. 왜냐하면, 남은 heap이 아닌, 총 heap과 비교하기 때문이다.

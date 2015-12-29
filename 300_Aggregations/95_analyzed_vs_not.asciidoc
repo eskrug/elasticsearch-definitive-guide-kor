@@ -2,12 +2,18 @@
 [[aggregations-and-analysis]]
 === Aggregations and Analysis
 
+=== 집계와 분석
+
 Some aggregations, such as the `terms` bucket, operate((("analysis", "aggregations and")))((("aggregations", "and analysis"))) on string fields.  And
 string fields may be either `analyzed` or `not_analyzed`, which begs the question:
 how does analysis affect aggregations?((("strings", "analyzed or not_analyzed string fields")))((("not_analyzed fields")))((("analyzed fields")))
 
+terms bucket 같은, 일부 집계는 string field에서 동작한다. 그리고 string field는 analyzed 또는 not_analyzed이다. 분석은 집계에 얼마나 영향을 미치는가? 라는 질문이 나올 수 있다.
+
 The answer is "a lot," but it is best shown through an example.  First, index
 some documents representing various states in the US:
+
+답은 “아주 많이”이다. 이것은 예제를 통해 가장 잘 보여줄 수 있다. 먼저, 미국의 몇몇 주를 나타내는 document를 색인 하자.
 
 [source,js]
 ----
@@ -27,6 +33,8 @@ POST /agg_analysis/data/_bulk
 We want to build a list of unique states in our dataset, complete with counts.
 Simple--let's use a `terms` bucket:
 
+데이터 집합에서 유일한 주와 그 수를 나타내는 목록을 만들려고 한다. 간단하게, terms bucket을 사용해 보자.
+
 [source,js]
 ----
 GET /agg_analysis/data/_search?search_type=count
@@ -42,6 +50,8 @@ GET /agg_analysis/data/_search?search_type=count
 ----
 
 This gives us these results:
+
+다음과 같은 결과가 나올 것이다.
 
 [source,js]
 ----
@@ -76,18 +86,26 @@ Oh dear, that's not at all what we want!  Instead of counting states, the aggreg
 is counting individual words.  The underlying reason is simple: aggregations
 are built from the inverted index, and the inverted index is _post-analysis_.
 
+이런, 우리가 원하던 것이 전혀 아니다. 집계는 주의 수를 세는 것이 아니라, 개별 단어를 세고 있다. 근본적인 이유는 간단하다. 집계는 inverted index에서 만들어지고, inverted index는 사후 분석(post-analysis)이다.
+
 When we added those documents to Elasticsearch, the string `"New York"` was
 analyzed/tokenized into `["new", "york"]`.  These individual tokens were then
 used to populate fielddata, and ultimately we see counts for `new` instead of
 `New York`.
 
+Elasticsearch에 이들 document를 추가하면, “New York”이라는 문자열은 분석되고, token으로 만들어져, [“new”, “york”]이 된다. 그 다음에, 이들 개별 token은 fielddata를 채우는데 사용되고, 결과적으로 “New York” 대신 “new”의 수를 보고 있다.
+
 This is obviously not the behavior that we wanted, but luckily it is easily
 corrected.
+
+이것은 확실히 우리가 원하던 바가 아니다. 하지만, 다행히도 쉽게 수정할 수 있다.
 
 We need to define a multifield for +state+ and set it to `not_analyzed`.  This
 will prevent `New York` from being analyzed, which means it will stay a single
 token in the aggregation.  Let's try the whole process over, but this time
 specify a _raw_ multifield:
+
+“주”에 대한 다중 field를 정의하고, 그것을 not_analyzed로 설정해야 한다. 이것은 “New York”이 분석되지 않도록 한다. 즉, 그것은 집계 시에 단일 token으로 남게 된다. “raw”라는 다중 field를 지정해서, 전체 프로세스를 다시 시도해 보자.
 
 [source,js]
 ----
@@ -137,7 +155,13 @@ GET /agg_analysis/data/_search?search_type=count
 <1> This time we explicitly map the +state+ field and include a `not_analyzed` sub-field.
 <2> The aggregation is run on +state.raw+ instead of +state+.
 
+<1> 이번에는 확실하게, “states” field를 지정하고, not_analyzed 하위 field를 포함하였다.
+<2> 집계는 “state”가 아닌 “state.raw”로 실행된다.
+
+
 Now when we run our aggregation, we get results that make sense:
+
+이제, 집계를 실행해 보면, 만족스러운 결과가 나온다.
 
 [source,js]
 ----
@@ -170,13 +194,19 @@ It is a generalization, but there are not many instances where you want to use
 an analyzed  field in an aggregation.  When in doubt, add a multifield so
 you have the option for both.((("analyzed fields", "aggregations and")))
 
+실제로, 이런 문제는 쉽게 찾을 수 있다. 집계는 단순히 이상한 bucket을 반환하고, 분석 문제를 제기할 것이다. 일반적이지만, 집계에 analyzed field를 사용하려는 경우가 많은 것은 아니다. 의심이 들면, 둘 모두를 위해, 선택이 가능한 다중 field를 추가하자.
+
 ==== High-Cardinality Memory Implications
+
+==== 높은 cardinality의 메모리에 끼치는 영향
 
 There is another reason to avoid aggregating analyzed fields: high-cardinality
 fields consume a large amount of memory when loaded into fielddata.((("memory usage", "high-cardinality fields")))((("cardinality", "high-cardinality fields, memory use issues")))  The
 analysis process often (although not always) generates a large number of tokens,
 many of  which are unique.  This increases the overall cardinality of the field
 and contributes to more memory pressure.((("analysis", "high-cardinality fields, memory use issues")))
+
+analyzed field의 집계를 피하려는 또 다른 이유가 있다. 높은 cardinality를 가진 field가 fielddata에 로드 되면, 아주 많은 양의 메모리를 사용한다. 분석 프로세스는 흔히 (항상은 아니지만), 아주 많은 token과 많은 유일한 token을 생성한다. 이것은 field의 전체 cardinality를 증가시키고, 더 많은 메모리 압박에 기여한다.
 
 Some types of analysis are _extremely_ unfriendly with regards to memory.
 Consider an n-gram analysis process.((("n-grams", "memory use issues associated with")))  The term +New York+ might be n-grammed into
@@ -190,13 +220,27 @@ the following tokens:
 - `or`
 - `rk`
 
+분석의 특정 유형은 메모리에 대해 매우 비우호적이다. ngram 분석 프로세스를 생각해 보자. “New York”이라는 단어는 ngram되어, 다음과 같은 token이 된다.
+
+- `ne`
+- `ew`
+- +w{nbsp}+
+- +{nbsp}y+
+- `yo`
+- `or`
+- `rk`
+
 You can imagine how the n-gramming process creates a huge number of unique tokens,
 especially when analyzing paragraphs of text.  When these are loaded into memory,
 you can easily exhaust your heap space.
 
+ngram 프로세스가 얼마나 많은 유일한 token을 생성하는지, 특히 텍스트의 단락을 분석하는 경우를 생각해 보자. 이들을 메모리에 로드되면, 쉽게 힙(heap) 공간을 소모할 수 있다.
+
 So, before aggregating across fields, take a second to verify that the fields are
 `not_analyzed`.  And if you want to aggregate analyzed fields, ensure that the analysis
 process is not creating an obscene number of tokens.
+
+그래서, field에서 집계하기 전에, field가 not_analyzed인지 확인하기는 시간을 가지자. 그리고, analyzed field를 집계해야 한다면, 분석 프로세스가 터무니없는 수의 token을 생성하지 않는지 확인해야 한다.
 
 [TIP]
 ==================================================
@@ -206,6 +250,13 @@ At the end of the day, it doesn't matter whether a field is `analyzed` or
 cardinality of the field--the more memory that is required. This is
 especially true for string fields, where every unique string must be held in
 memory--longer strings use more memory.
+
+==================================================
+
+[TIP]
+==================================================
+
+결국, field가 analyzed나 not_analyzed인 것은 중요하지 않다. field에 유일한 값이 많을수록(cardinality가 높을수록), 더 많은 메모리가 필요하다. 모든 유일한 문자열을 메모리에 저장해야 하는 string field에서, 이것은 특히 그렇다. 문자열이 길수록 더 많은 메모리를 사용한다.
 
 ==================================================
 

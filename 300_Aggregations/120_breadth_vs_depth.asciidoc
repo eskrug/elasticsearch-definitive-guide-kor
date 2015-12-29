@@ -1,6 +1,8 @@
 
 === Preventing Combinatorial Explosions
 
+=== 조합의 확장을 막으려면
+
 The `terms` bucket dynamically builds buckets based on your data; it doesn't
 know up front how many buckets will be generated. ((("combinatorial explosions, preventing")))((("aggregations", "preventing combinatorial explosions"))) While this is fine with a
 single aggregation, think about what can happen when one aggregation contains
@@ -8,8 +10,12 @@ another aggregation, which contains another aggregation, and so forth. The combi
 unique values in each of these aggregations can lead to an explosion in the
 number of buckets generated.
 
+terms bucket은 데이터에 기반한 bucket을 동적으로 생성한다. 얼마나 많은 bucket을 생성해야 할지를 미리 알지는 못한다. 이것은 단일 집계에서는 잘 되겠지만, 어떤 집계가 다른 집계를 포함하고, 또 다른 집계를 포함하는 등의 경우에는 어떤 일이 일어날지를 생각해 보자. 이런 집계 각각에서, 유일한 값의 조합은, 생성된 bucket 수의 폭발적인 증가로 이어질 것이다.
+
 Imagine we have a modest dataset that represents movies.  Each document lists
 the actors in that movie:
+
+영화를 나타내는 적당한 데이터 집합을 가지고 있다고 가정해 보자. 각 document는 해당 영화의 배우를 나열하고 있다.
 
 [source,js]
 ----
@@ -24,6 +30,8 @@ the actors in that movie:
 
 If we want to determine the top 10 actors and their top costars, that's trivial
 with an aggregation:
+
+10대 배우와 그들의 최고 조연을 알아내려면, 집계를 사용하면 쉬운 일이다.
 
 [source,js]
 ----
@@ -51,24 +59,36 @@ This will return a list of the top 10 actors, and for each actor, a list of thei
 top five costars.  This seems like a very modest aggregation; only 50
 values will be returned!
 
+이것은 10대 배우의 목록과, 각 배우에 대해, 그들 자신의 조연 배우의 목록을 반환한다. 이것은 매우 적절한 집계처럼 보인다. 50개의 값만 반환될 것이다.
+
 However, this seemingly ((("aggregations", "fielddata", "datastructure overview")))innocuous query can easily consume a vast amount of
 memory. You can visualize a `terms` aggregation as building a tree in memory.
 The `actors` aggregation will build the first level of the tree, with a bucket
 for every actor.  Then, nested under each node in the first level, the
 `costars` aggregation will build a second level, with a bucket for every costar, as seen in <<depth-first-1>>. That means that a single movie will generate n^2^ buckets!
 
+그러나, 외견상 문제가 없어 보이는, 이 query는 어마어마한 양의 메모리를 소모한다. 메모리에 tree를 만들기 위해, terms 집계를 시각화할 수 있다. actors 집계는 모든 배우의 bucket을 이용하여, tree의 첫 번째 단계를 만든다. 그 다음에, 첫 번째 단계에서 각 node의 아래에 중첩된, “costars” 집계는 모든 조연 배우 bucket을 이용하여, 두 번째 단계를 만든다. 즉, 어떤 하나의 영화는 n2개의 bucket을 생성한다.
+
 [[depth-first-1]]
 .Build full depth tree
 image::images/300_120_depth_first_1.svg["Build full depth tree"]
+
+[[depth-first-1]]
+.Build full depth tree
+image::images/300_120_depth_first_1.svg["전체 tree 구축"]
 
 To use some real numbers, imagine each movie has 10 actors on average. Each movie
 will then generate 10^2^ == 100 buckets.  If you have 20,000 movies, that's
 roughly 2,000,000 generated buckets.
 
+실제로 발생하는 수를 생각해보기 위해, 각 영화에 평균 10명의 배우가 출연했다고 가정해 보자. 그러면, 각 영화는 102 == 100개의 bucket을 만들어낸다. 20,000개의 영화를 가지고 있다면, 대략, 2,000,000개의 bucket을 만들어 낼 것이다.
+
 Now, remember, our aggregation is simply asking for the top 10 actors and their
 co-stars, totaling 50 values.  To get the final results, we have to generate
 that tree of 2,000,000 buckets, sort it, and finally prune it such that only the
 top 10 actors are left. This is illustrated in <<depth-first-2>> and <<depth-first-3>>.
+
+자, 이 집계는 단순하게, 10명의 주연 배우와 그들의 조연 배우, 합해서 50명을 찾고 있다. 최종 결과를 얻으려면, 2,000,000개 bucket의 tree를 생성하고, 그것을 정렬하고, 마지막으로, 10명의 배우가 남을 때까지 정리해야 한다.
 
 [[depth-first-2]]
 .Sort tree
@@ -78,15 +98,29 @@ image::images/300_120_depth_first_2.svg["Sort tree"]
 .Prune tree
 image::images/300_120_depth_first_3.svg["Prune tree"]
 
+[[depth-first-2]]
+.Sort tree
+image::images/300_120_depth_first_2.svg["tree의 정렬"]
+
+[[depth-first-3]]
+.Prune tree
+image::images/300_120_depth_first_3.svg["tree의 정리"]
+
 At this point you should be quite distraught.  Twenty thousand documents is paltry,
 and the aggregation is pretty tame.  What if you had 200 million documents, wanted
 the top 100 actors and their top 20 costars, as well as the costars' costars?
+
+지금, 약간 혼란스러울 것이다. 20,000개의 document는 별 것 아니고 집계도 마찬가지이다. 만약, 2억개의 document를 가지고 있는데, 100대 배우와 그들의 최고 조연 20명을, 마찬가지로 조연의 조연을 알아내려면, 무슨 일이 일어날까?
 
 You can appreciate how quickly combinatorial expansion can grow, making this
 strategy untenable.  There is not enough memory in the world to support uncontrolled
 combinatorial explosions.
 
+얼마나 빨리 조합의 확장이 커질지, 이 전략은 말이 안 된다는 것을 알 수 있을 것이다. 통제되지 않는 조합의 확장을 지원하는 세계에서는, 메모리가 부족할 수 밖에 없다.
+
 ==== Depth-First Versus Breadth-First
+
+==== Depth-First Vs Breadth-First
 
 Elasticsearch allows you to change the _collection mode_ of an aggregation, for
 exactly this situation. ((("collection mode"))) ((("aggregations", "preventing combinatorial explosions", "depth-first versus breadth-first")))The strategy we outlined previously--building the tree fully
@@ -94,14 +128,20 @@ and then pruning--is called _depth-first_ and it is the default. ((("depth-first
 works well for the majority of aggregations, but can fall apart in situations
 like our actors and costars example.
 
+정확히 이런 상황을 위해, Elasticsearch는 집계의 수집 모드를 변경할 수 있다. 위에서 설명한 전략(완전한 tree를 구축하고, 정리하는)을 depth-first라 하고, 이것이 기본이다. depth-first는 집계의 대부분에서 잘 동작하지만, 위와 같은 상황에서는 아니다.
+
 For these special cases, you should use an alternative collection strategy called
 _breadth-first_.  ((("beadth-first collection strategy")))This strategy works a little differently.  It executes the first
 layer of aggregations, and _then_ performs a pruning phase before continuing, as illustrated in <<breadth-first-1>> through <<breadth-first-3>>.
+
+이런 특별한 상황에서는, breadth-first라는 대조적인 수집 전략을 사용해야 한다. 이 전략은 약간 다르게 동작한다. 집계의 첫 번째 단계를 실행한 다음, 계속하기 전에 정리 작업을 수행한다.
 
 In our example, the `actors` aggregation would be executed first.  At this
 point, we have a single layer in the tree, but we already know who the top 10
 actors are! There is no need to keep the other actors since they won't be in
 the top 10 anyway. 
+
+이 예에서, actors 집계가 먼저 실행된다. 이 시점에서 tree의 첫 번째 단계를 가지고 있다. 즉, 10대 배우가 누구인지 알고 있다. 어쨌든 10대 배우가 아닌 다른 배우들을 가지고 있을 필요가 없다.
 
 [[breadth-first-1]]
 .Build first level
@@ -115,17 +155,36 @@ image::images/300_120_breadth_first_2.svg["Sort first level"]
 .Prune first level
 image::images/300_120_breadth_first_3.svg["Prune first level"]
 
+[[breadth-first-1]]
+.첫번째 단계의 구축
+image::images/300_120_breadth_first_1.svg["첫번째 단계의 구축"]
+
+[[breadth-first-2]]
+.첫번째 단계의 정렬
+image::images/300_120_breadth_first_2.svg["첫번째 단계의 정렬"]
+
+[[breadth-first-3]]
+.첫번째 단계의 정리
+image::images/300_120_breadth_first_3.svg["첫번째 단계의 정리"]
+
 Since we already know the top ten actors, we can safely prune away the rest of the
 long tail. After pruning, the next layer is populated based on _its_ execution mode,
 and the process repeats until the aggregation is done, as illustrated in <<breadth-first-4>>. This prevents the
 combinatorial explosion of buckets and drastically reduces memory requirements
 for classes of queries that are amenable to breadth-first. 
 
+이미 10대 배우를 알고 있기 때문에, 불필요한 나머지는 정리할 수 있다. 정리 후에, 다음 단계가 그것의 실행 모드를 기반으로 채워진다. 이것은 bucket 조합의 확장을 방지하고, 이런 종류의 query에 대한 메모리 요구량을 급격하게 줄인다.
+
 [[breadth-first-4]]
 .Populate full depth for remaining nodes
 image::images/300_120_breadth_first_4.svg["Step 4: populate full depth for remaining nodes"]
 
+[[breadth-first-4]]
+.나머지 노드들의 모든 댑스를 채운다
+image::images/300_120_breadth_first_4.svg["Step 4: 나머지 노드들의 모든 댑스를 채운다"]
+
 To use breadth-first, simply ((("collect parameter, enabling breadth-first")))enable it via the `collect` parameter:
+breadth-first를 사용하기 위해, collect 매개변수를 사용하여 간단하게 활성화할 수 있다.
 
 [source,js]
 ----
@@ -150,11 +209,14 @@ To use breadth-first, simply ((("collect parameter, enabling breadth-first")))en
 }
 ----
 <1> Enable `breadth_first` on a per-aggregation basis.
+<1> 기본적으로 집계 별로 breadth-first를 활성화할 수 있다.
 
 Breadth-first should be used only when you expect more buckets to be generated
 than documents landing in the buckets.  Breadth-first works by caching
 document data at the bucket level, and then replaying those documents to child
 aggregations after the pruning phase.
+
+breadth-first는 bucket에 있는 document보다 더 많은 bucket이 생성될 것으로 예상되는 경우에만 사용되어야 한다. breadth-first는 bucket 수준에서 document 데이터를 잡고(caching), 정리한 후에, 하위 집계에 이들 document를 다시 적용(replaying)한다.
 
 The memory requirement of a breadth-first aggregation is linear to the number
 of documents in each bucket prior to pruning.  For many aggregations, the
@@ -163,9 +225,11 @@ monthly intervals: you might have thousands or hundreds of thousands of
 documents per bucket.  This makes breadth-first a bad choice, and is why
 depth-first is the default.
 
+breadth-first 집계의 메모리 요구량은 정리하기 전에 각 bucket에 있는 document 수에 비례한다. 많은 집계에서, bucket에 있는 document의 수는 매우 크다. 월간 그래프를 생각해 보면, bucket별로 수 천 개의 document를 수백 또는 수천 개 가지고 있을 것이다. 이런 경우 breadth-first는 좋지 않은 선택이 되고, depth-first가 기본이 된다.
+
 But for the actor example--which generates a large number of
 buckets, but each bucket has relatively few documents--breadth-first is much
 more memory efficient, and allows you to build aggregations that would
 otherwise fail.
 
-
+그러나, 배우 예제(각 bucket은 상대적으로 적은 document를 가지고 있지만, 매우 많은 bucket을 만들어 내는 상황)에서, breadth-first는 메모리 사용이 훨씬 더 효율적이고, 그렇게 하지 않으면 실패할 집계를 구축할 수 있다.

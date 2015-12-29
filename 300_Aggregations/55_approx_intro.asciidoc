@@ -1,11 +1,15 @@
 
 == Approximate Aggregations
 
+== 대략적인 집계
+
 Life is easy if all your data fits on a single machine.((("aggregations", "approximate")))  Classic algorithms
 taught in CS201 will be sufficient for all your needs.  But if all your data fits
 on a single machine, there would be no need for distributed software
 like Elasticsearch at all.  But once you start distributing data, algorithm
 selection needs to be made carefully.
+
+모든 데이터가 단일 시스템으로 충분하다면, 참 쉬울 것이다. CS201에서 배운 고전적인 알고리즘으로, 모든 요구를 충족시킬 것이다. 하지만, 모든 데이터가 단일 시스템으로 충분하다면, Elasticsearch 같은 분산 소프트웨어가 불필요할 것이다. 그러나, 데이터를 분산하기 시작하면, 알고리즘의 선택은 신중해야 한다.
 
 Some algorithms are amenable to distributed execution.  All of the aggregations
 discussed thus far execute in a single pass and give exact results. These types 
@@ -13,22 +17,35 @@ of algorithms are often referred to as _embarrassingly parallel_,
 because they parallelize to multiple machines with little effort.  When 
 performing a `max` metric, for example, the underlying algorithm is very simple:
 
+어떤 알고리즘은 분산 실행을 해야 한다. 지금까지 언급했던 모든 집계는 단일-경로(single-path)에서 실행하고, 정확한 결과를 제공한다. 이런 유형의 알고리즘은 약간의 노력으로, 여러 시스템에 병렬이어서, 종종 “당혹스러운(embarrassingly) 병렬”이라고 한다. 예를 들어, max metric을 실행하는 경우, 기본 알고리즘은 매우 간단하다.
+
 1. Broadcast the request to all shards.
 2. Look at the +price+ field for each document.  If `price > current_max`, replace
 `current_max` with `price`.
 3. Return the maximum price from all shards to the coordinating node.
 4. Find the maximum price returned from all shards.  This is the true maximum.
 
+1. 모든 shard에 요청을 전달(broadcast)한다.
+2. 각 document에 대해, “price” field를 확인한다. price가 current_max보다 크면, current_max를 price로 바꾼다.
+3. 모든 shard에서 최대 가격을 조정 node로 반환한다.
+4. 모든 shard에서 반환된 price에서 최대값을 찾는다. 이것이 진짜 최대값이다.
+
+
 The algorithm scales linearly with machines because the algorithm requires no
 coordination (the machines don't need to discuss intermediate results), and the 
 memory footprint is very small (a single integer representing the maximum).
+
+알고리즘은 어떤 조정(시스템은 중간 결과를 확인할 필요가 없다.)도 필요하지 않기 때문에, 알고리즘은 시스템을 선형으로 스케일하고, 메모리 공간도 매우 작다(최대 값을 나타내는 하나의 정수)
 
 Not all algorithms are as simple as taking the maximum value, unfortunately.
 More complex operations require algorithms that make conscious trade-offs in
 performance and memory utilization. There is a triangle of factors at play: 
 big data, exactness, and real-time latency.
 
+유감스럽게도, 알고리즘이 최대값을 가져오는 것만큼 간단하지가 않다. 더 복잡한 연산은 성능과 메모리 활용의 균형을 판단하는 알고리즘이 필요하다. 세 가지 요소가 있다. BigData, 정확성(exactness), 실시간 응답 시간(real-time latency)
+
 You get to choose two from this triangle:
+이 세가지 요소 중 2가지를 선택 해야 한다.
 
 Exact + real time:: Your data fits in the RAM of a single machine.  The world
 is your oyster; use any algorithm you want. Results will be 100% accurate and
@@ -40,25 +57,43 @@ and give you exact answers--but it may take a week to give you that answer.
 Big data + real time:: Approximate algorithms that give you accurate, but not
 exact, results.
 
+Exact + real time:: 단일 시스템의 RAM에 적합하다. 무엇이든 가능하다(The world is your oyster). 어떤 알고리즘을 사용해도 된다. 결과는 100% 정확하고, 비교적 빠르다.
+
+Big data + exact::  고전적인 Hadoop의 설치. PB(petabytes)의 데이터를 다룰 수 있고, 정확한 답을 제공할 것이다. 그러나, 그 대답에 일주일 정도 걸릴 것이다.
+
+Big data + real time:: 정확한 결과를 제공할 수 있는 대략적인(approximate) 알고리즘, 그러나 100% 정확하지는 않다.
+
+
 Elasticsearch currently supports two approximate algorithms (`cardinality` and 
 `percentiles`). ((("approximate algorithms")))((("cardinality")))((("percentiles"))) These will give you accurate results, but not 100% exact.
 In exchange for a little bit of estimation error, these algorithms give you
 fast execution and a small memory footprint.
 
+현재, Elasticsearch는 2개의 대략적인 알고리즘(cardinality와 percentiles)을 제공한다. 이들은 정확한 결과를 제공하지만, 100% 정확하지는 않다. 약간의 추정 오차의 대가로, 이들 알고리즘은 빠른 실행과 작은 메모리 공간을 제공한다.
+
 For _most_ domains, highly accurate results that return _in real time_ across
 _all your data_ is more important than 100% exactness. At first blush, this may be an alien concept to you. _"We need exact answers!"_ 
 you may yell.  But consider the implications of a 0.5% error:
+
+대부분의 영역에서, 모든 데이터에 대해, 실시간으로 반환하는 매우 정확한 결과는 100%의 정확함보다 더 중요하다. 언뜻 보기에, 이상할 수도 있다. “정확한 답변이 필요해요”라고 말할 수 있다. 그러나, 0.5%의 오차에 대한 영향을 고려해 보자.
 
 - The true 99th percentile of latency for your website is 132ms.
 - An approximation with 0.5% error will be within +/- 0.66ms of 132ms.
 - The approximation returns in milliseconds, while the "true" answer may take seconds, or
 be impossible.
 
+- website 응답 시간의 진짜 99번째 백분위(percentiles)는 132ms이다.
+- 0.5% 오차를 가진 대략적인 값은 132ms의 +/- 0.6ms 이내이다.
+- 대략적인 값은 수 ms(milliseconds)안에 반환될 것이다. “진짜” 답은 수초가 걸리거나 불가능할 것이다.
+
+
 For simply checking on your website's latency, do you care if the approximate 
 answer is 132.66ms instead of 132ms?  Certainly, not all domains can tolerate
 approximations--but the vast majority will have no problem.  Accepting
 an approximate answer is more often a _cultural_ hurdle rather than a business
 or technical imperative.
+
+website 응답 시간을 간단히 확인하는 경우, 대략적인 답이 132ms 대신 132.66ms인 것이 무슨 상관이 있겠는가? 물론, 모든 영역에서 대략적인 값을 허용할 수는 없겠지만 … 대부분은 아무 문제가 되지 않는다. 하지만, 대략적인 답을 받아들이면, 비즈니스나 기술 장애보다는 문화적 장애물을 피할 수 없게 된다.
 
 
 

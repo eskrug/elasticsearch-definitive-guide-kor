@@ -1,10 +1,14 @@
 [[partial-updates]]
 === Partial Updates to Documents
 
+=== document의 부분적인 업데이트
+
 In <<update-doc>>, we said that ((("updating documents", "partial updates")))((("documents", "partial updates")))the way to update a document is to retrieve
 it, change it, and then reindex the whole document. This is true. However, using
 the `update` API, we can make partial updates like incrementing a counter in a
 single request.
+
+updating a whole document – 전체 document를 업데이트 하자(p.41)에서, document를 업데이트하는 방식은 document를 가져와서 수정하고, 전체 document를 다시 색인 한다고 언급했다. 이것은 사실이다. 그러나 update API를 사용하면, 단일 요청으로, counter를 증가시키는 것과 같은 부분적인 업데이트를 할 수 있다.
 
 We also said that documents are immutable: they cannot be changed, only
 replaced.  The `update` API _must_ obey the same rules.  Externally, it
@@ -16,11 +20,15 @@ requests. By reducing the time between the _retrieve_ and _reindex_ steps, we
 also reduce the likelihood of there being conflicting changes from other
 processes.
 
+document는 불변(수정할 수 없고, 오직 대체해야 한다)이라고 언급했다. _update API도 같은 원칙을 가져야 한다. 외부적으로는, document가 있던 곳에, 부분적으로 document를 업데이트하는 것처럼 나타난다. 그러나, 내부적으로, update API는 이미 언급한 것과 같이, 단순히 가져와서-변경하고-다시 색인하는(retrieve-change-reindex) 프로세스를 따른다. 차이점은 이 프로세스가 shard내에서 발생한다는 것이다. 이렇게 되면, 다중 요청에 의한 네트워크 부하를 피할 수 있다. 가져오고, 다시 색인하는 작업 사이의 시간을 절약하여, 다른 프로세스의 변경 사항과 충돌할 가능성도 줄어든다.
+
 The simplest form of the `update` request accepts a partial document as the
 `doc` parameter, which just gets merged with the existing document. Objects
 are merged together, existing scalar fields are overwritten, and new fields are
 added. For instance, we could add a `tags` field and a `views` field to our
 blog post as follows:
+
+업데이트 요청의 가장 단순한 형태는, doc 매개변수로 document의 일부를 받아, 기존 document와 병합하는 것이다. 오브젝트는 함께 병합되고, 기존의 숫자 field는 덮어 써지고, 새로운 field는 추가된다. 예를 들면, tags field와 view field를, 블로그 포스트에 추가할 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -37,6 +45,8 @@ POST /website/blog/1/_update
 If the request succeeds, we see a response similar to that
 of the `index` request:
 
+요청이 성공하면, index 요청과 유사한 응답을 볼 수 있다.
+
 [source,js]
 --------------------------------------------------
 {
@@ -48,6 +58,8 @@ of the `index` request:
 --------------------------------------------------
 
 Retrieving the document shows the updated `_source` field:
+
+document를 가져와 보면, 업데이트된 _source field를 볼 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -69,13 +81,19 @@ Retrieving the document shows the updated `_source` field:
 
 <1> Our new fields have been added to the `_source`.
 
+<1> 새로운 field가 _source에 추가되었다.
+
 ==== Using Scripts to Make Partial Updates
+
+==== 부분 업데이트를 위한 script 사용하기
 
 
 Scripts can be used in the `update` API to change the contents of the `_source`
 field, which ((("_source field", sortas="source field")))is referred to inside an update script as `ctx._source`. For
 instance, we could use a script to increment the number of `views` that our
 blog post has had:
+
+script는 _source field의 내용을 변경하기 위해, update API에서 사용될 수 있다. 이것은 업데이트 script내에서 ctx._source로 참조된다. 예를 들면, 블로그 게시물이 가진, views의 수를 증가시키기 위해 script를 사용할 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -125,11 +143,21 @@ http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-sc
 
 ****
 
+.groovy로 scripting
+****
+API가 충분하지 않은 경우에, Elasticsearch에서는 사용자 정의 로직을 script로 작성할 수 있다. scripting은 검색, 정렬, 집계, 그리고 document 업데이트 같은, 많은 API를 지원한다. script는 요청의 일부로 전달될 수 있고, 특별한 index .scripts에서 가져오거나 디스크에서 로드 할 수 있다.
+기본 script 언어는 javascript와 유사한 문법을 가지는, 빠른 표현 script 언어인 groovy 이다. 악의적인 사용자가 Elasticsearch를 벗어나, 서버를 공격하는 것을 방지하기 위하여, sandbox 에서 실행된다.
+scripting 에서, script에 대해 더 많은 것을 읽을 수 있다.
+
+****
+
 We can also use a script to add a new tag to the `tags` array.  In this
 example we specify the new tag as a parameter rather than hardcoding it in
 the script itself. This allows Elasticsearch to reuse the script in the
 future, without having to compile a new script every time we want to add
 another tag:
+
+tags 배열에 새로운 tag를 추가하기 위해서도 사용할 수 있다. 이 예제에서 script 자체에 hard coding하지 않고, 새로운 tag를 매개변수로 지정했다. 이것은 다른 tag를 추가할 때마다 새로운 script를 다시 compile하지 않고, 나중에 script를 재사용하기 위해서이다.
 
 [source,js]
 --------------------------------------------------
@@ -145,6 +173,8 @@ POST /website/blog/1/_update
 
 
 Fetching the document shows the effect of the last two requests:
+
+document를 가져와 보면, 마지막 두 개의 요청의 효과를 볼 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -165,8 +195,14 @@ Fetching the document shows the effect of the last two requests:
 <1> The `search` tag has been appended to the `tags` array.
 <2> The `views` field has been incremented.
 
+<1> search tag가 tags에 추가되었다.
+<2> views field가 증가하였다.
+
+
 We can even choose to delete a document based on its contents,
 by setting `ctx.op` to `delete`:
+
+심지어, document의 내용을 기준으로, document를 삭제(ctx.op를 delete로 설정)할 수도 있다.
 
 [source,js]
 --------------------------------------------------
@@ -182,13 +218,19 @@ POST /website/blog/1/_update
 
 ==== Updating a Document That May Not Yet Exist
 
+==== 아직 존재하지 않는 document의 업데이트
+
 Imagine that we need to store a((("updating documents", "that don&#x27;t already exist"))) page view counter in Elasticsearch. Every time
 that a user views a page, we increment the counter for that page.  But if it
 is a new page, we can't be sure that the counter already exists. If we try to
 update a nonexistent document, the update will fail.
 
+Elasticsearch에 pageview counter를 저장한다고 가정해 보자. 사용자가 page를 볼 때마다 page의 counter를 증가시켜야 한다. 그런데, 그 page가 새로운 page라면, counter가 이미 존재한다고 확신할 수 없다. 아직 존재하지 않는 document를 업데이트하려 하면, 업데이트는 실패할 것이다.
+
 In cases like these, we can use((("upsert parameter"))) the `upsert` parameter to specify the
 document that should be created if it doesn't already exist:
+
+이런 경우에, 존재하지 않을 경우에, 생성하도록 지정하는, upsert 매개변수를 지정할 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -207,7 +249,11 @@ document, which  initializes the `views` field to `1`. On subsequent runs, the
 document already exists, so the `script` update is applied instead,
 incrementing the `views` counter.
 
+이 요청을 처음 실행하면, upsert 값은 views field가 1로 초기화되어, 새로운 document로 색인 될 것이다. 또 실행하면, document가 이미 존재하기 때문에, views counter를 증가시킨 값으로 적용되어 업데이트된다.
+
 ==== Updates and Conflicts
+
+==== 업데이트와 충돌
 
 In the introduction to this section, we said((("updating documents", "conflicts and")))((("conflicts", "updates and"))) that the smaller the window between
 the _retrieve_ and _reindex_ steps, the smaller the opportunity for
@@ -215,19 +261,27 @@ conflicting changes. But it doesn't eliminate the possibility completely. It
 is still possible that a request from another process could change the
 document before `update` has managed to reindex it.
 
+위에서 가져오는 retrieve와 reindex 단계 사이는 더 작아, 변경 사항이 충돌할 기회가 더 작을 것이라고 이야기 했다. 그러나 가능성이 완전히 없을 수는 없다. 업데이트가 document를 reindex하기 전에, 다른 프로세스가 document 수정 요청을 보낼 가능성은 여전하다.
+
 To avoid losing data, the `update` API retrieves the current `_version`
 of the document in the _retrieve_ step, and passes that to the `index` request
 during the _reindex_ step.
 If another process has changed the document between retrieve and reindex,
 then the `_version` number won't match and the update request will fail.
 
+데이터 손실을 방지하기 위해, update API는 retrieve 단계에서 document의 현재 _version을 가져오고, reindex 단계에서 index 요청에 그것을 넘긴다. retrieve와 index사이에서 다른 프로세스가 document를 수정하면, _version number가 일치하지 않아, 업데이트 요청은 실패한다.
+
 For many uses of partial update, it doesn't matter that a document has been
 changed.  For instance, if two processes are both incrementing the page-view counter, it doesn't matter in which order it happens; if a conflict
 occurs, the only thing we need to do is reattempt the update.
 
+부분 업데이트 중 많은 경우에 있어, document가 수정되었다는 것은 문제가 아니다. 예를 들자면, 두 개의 프로세스가 모두 page view counter를 증가시키려고 하면, 발생한 순서는 관계없다. 만약 충돌이 일어나면, 업데이트를 다시 시도하면 된다.
+
 This can be done automatically by((("query strings", "retry_on_conflict parameter")))((("retry_on_conflict parameter"))) setting the `retry_on_conflict` parameter to
 the number of times that `update` should retry before failing; it defaults
 to `0`.
+
+실패하기 전에, 업데이트를 재시도 할 횟수를 retry_on_conflict에 설정하여, 자동으로 이를 수행할 수 있다. 기본값은 0이다.
 
 [source,js]
 --------------------------------------------------
@@ -242,6 +296,8 @@ POST /website/pageviews/1/_update?retry_on_conflict=5 <1>
 // SENSE: 030_Data/45_Upsert.json
 <1> Retry this update five times before failing.
 
+<1> 실패하면 5번을 재시도한다.
+
 This works well for operations such as incrementing a counter, where the order of
 increments does not matter, but in other situations the order of
 changes _is_ important. Like the <<index-doc,`index` API>>, the `update` API
@@ -249,4 +305,6 @@ adopts a _last-write-wins_ approach by default, but it also accepts a
 `version` parameter that allows you to use
 <<optimistic-concurrency-control,optimistic concurrency control>> to specify
 which version of the document you intend to update.
+
+이 동작은 증가의 순서에 관계없이, counter를 증가시키는 것은 잘 된다. 그러나, 변경의 순서가 중요한 다른 상황도 있다. index, API처럼, update API는 기본적으로 “last-write-wins”라는 방식을 채택한다. 그러나, 업데이트 시에, document의 버전을 지정하여, 낙관적인 동시성 제어(p.45) 를 사용할 수 있도록, update API는 버전 매개변수를 받아 들인다.
 
