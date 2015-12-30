@@ -1,90 +1,35 @@
 [[version-control]]
-=== Dealing with Conflicts
-
 === 충돌 취급
-
-When updating a document with ((("conflicts", "dealing with")))the `index` API, we read the original document,
-make our changes, and then reindex the _whole document_ in one go. The most recent
-indexing request wins: whichever document was indexed last is the one stored
-in Elasticsearch. If somebody else had changed the document in the meantime,
-their changes would be lost.
 
 ((("conflicts", "dealing with")))`index` API를 사용하여 document를 업데이트할 경우, 원래의 document를 읽고, 
 변경을 하고, 한번에 _전체 document_를 재색인 한다. 가장 최근의 색인 요청이 저장된다. 마지막으로 색인된 document가 Elasticsearch에 한번 저장된다. 
 누군가 그 사이에 document를 변경했다면, 그 변경 사항은 사라진다. 
 
-Many times, this is not a problem.  Perhaps our main data store is a
-relational database, and we just copy the data into Elasticsearch to make it
-searchable. Perhaps there is little chance of two people changing the same
-document at the same time. Or perhaps it doesn't really matter to our business
-if we lose changes occasionally.
-
 많은 경우, 이런 상황은 문제가 되지 않는다. 아마 주 데이터의 저장소는 RDB이고, Elasticsearch에 검색 가능하도록 그 데이터를 복사할 뿐이다. 
 아마도 두 사람이 동일한 document를, 동시에 변경하는 경우는 거의 없을 것이다. 경우에 따라, 변경 사항이 사라지는 경우가 있겠지만, 크게 문제가 되지 않는다.
 
-But sometimes losing a change is _very important_.  Imagine that we're using
-Elasticsearch to store the number of widgets that we have in stock in our
-online store. Every time that we sell a widget, we decrement the stock count
-in Elasticsearch.
-
 그러나 때때로 변경 사항을 잃어 버린 것이, _매우 중요_할 수도 있다. Elasticsearch를 온라인 상점에서, 
 많은 상품들의 재고를 저장하는데 사용하고 있다고 가정해 보자. 상품을 팔 때마다 Elasticsearch에서 재고를 감소시켜야 한다.
-
-One day, management decides to have a sale. Suddenly, we are selling several
-widgets every second. Imagine two web processes, running in parallel, both
-processing the sale of one widget each, as shown in <<img-data-lww>>.
 
 어느 날 관리자가 sale을 하기로 했다. 갑자기 매초마다 여러 가지 상품이 팔릴 것이다. 동시에 동작하고 있는 두 개의 web 프로세스를 생각해 보자. 
 둘 모두 하나의 상품에 대한 판매를 각각 진행하고 있는 것을 <<img-data-lww, 동시성 제어가 없는 경우의 결과>>에서 볼수 있다.
 
 [[img-data-lww]]
-.Consequence of no concurrency control
-image::images/elas_0301.png["Consequence of no concurrency control",width="50%",align="center"]
-
-[[img-data-lww]]
 .동시성 제어가 없는 경우의 결과
 image::images/elas_0301.png["동시성 제어가 없는 경우의 결과",width="50%",align="center"]
-
-The change that `web_1` made to the `stock_count` has been lost because
-`web_2` is unaware that its copy of the `stock_count` is out-of-date. The
-result is that we think we have more widgets than we actually do, and we're
-going to disappoint customers by selling them stock that doesn't exist.
 
 `web_2`가 `재고 수` 복사본의 최신 상태임을 알지 못하기 때문에,`재고 수`에 대한 `web_1`의 변화가 사라졌다. 
 결과적으로, 실제로 가지고 있는 것보다 더 많은 상품이 있다고 생각하여, 존재하지 않는 상품을 고객들에게 판매하여, 고객을 실망시킬 것이다.
 
-The more frequently that changes are made, or the longer the gap between
-reading data and updating it, the more likely it is that we will lose changes.
-
 변화가 더 자주 발생할수록, 데이터를 읽는 것과 업데이트 사이에 간격이 더 길수록, 변경 사항이 사라질 가능성은 더 많아진다.
-
-In the database world, two approaches are commonly used to ensure that
-changes are not lost when making ((("pessimistic concurrency control")))((("concurrency control")))concurrent updates:
 
 데이터베이스의 세계에서, 동시에 업데이트가 이루어지는 경우에, 변경 사항이 사라지지 않을 것을 보장하기 위해(("pessimistic concurrency control")))((("concurrency control"))), 
 흔히 사용되는 두 가지 방법이 있다:
-
-_Pessimistic concurrency control_::
-
-Widely used by relational databases, this approach assumes that conflicting changes are
-likely to happen and so blocks access to a resource in order to prevent
-conflicts. A typical example is locking a row before reading its data,
-ensuring that only the thread that placed the lock is able to make changes to
-the data in that row.
 
 _비관적인 동시성 제어_::
 
 RDB에서 널이 사용된다. 변경 사항이 충돌할 가능성이 있고, 그래서 block은 충돌을 막기 위해 resource에 접근한다고 가정한다. 
 전형적인 예는 데이터를 읽기 전에 row를 잠그는 것이다. 데이터를 잠근 thread만 해당 row에 있는 데이터를 바꿀 수 있도록 하는 것이다.
-
-_Optimistic concurrency control_::
-
-Used by Elasticsearch, ((("optimistic concurrency control"))) this approach assumes that conflicts are unlikely to happen and
-doesn't block operations from being attempted. However, if the underlying data
-has been modified between reading and writing, the update will fail. It is
-then up to the application to decide how it should resolve the conflict. For
-instance, it could reattempt the update, using the fresh data, or it could
-report the situation to the user.
 
 _낙관적인 동시성 제어_::
 
@@ -92,34 +37,14 @@ Elasticsearch에서 사용된다. ((("optimistic concurrency control")))충돌�
 업데이트는 실패한다. 충돌을 해결하는 방법은 응용프로그램에 달려 있다. 예를 들어 새로운 데이터를 이용하여 업데이트를 다시 시도할 수도 있거나, 새로운 데이터를 사용하거나, 사용자에게 상황을 보고할 수도 있다.
 
 [[optimistic-concurrency-control]]
-=== Optimistic Concurrency Control
-
 === 낙관적인 동시성 제어
-
-Elasticsearch is distributed.  When documents((("concurrency control", "optimistic"))) are created, updated, or deleted,
-the new version of the document has to be replicated to other nodes in the
-cluster.  Elasticsearch is also asynchronous and  concurrent, meaning that
-these replication requests are sent in parallel, and may arrive at their
-destination _out of sequence_. Elasticsearch needs a way of ensuring that an older
-version of a document never overwrites a newer version.
 
 Elasticsearch는 분산되어 있다. document가 ((("concurrency control", "optimistic")))생성되거나, 업데이트, 삭제되면, 
 document의 새로운 버전은 cluster의 다른 node로 복제된다. Elasticsearch는 비동기적이고 동시성을 가진다. 
 즉, 복제 요청이 병렬로 보내지고, _차례대로 도착하지 않을지도_ 모른다. Elasticsearch 기존 버전의 document가 새로운 버전의 document를 절대로 덮어쓰지 않을 것을 보장하는 방법이 필요하다.
 
-When we discussed `index`, `get`, and `delete` requests previously, we pointed out
-that every document has a `_version` number that is incremented whenever a
-document is changed. Elasticsearch uses this `_version` number to ensure that
-changes are applied in the correct order. If an older version of a document
-arrives after a new version, it can simply be ignored.
-
 위에서 `index`, `get`, `delete`를 이야기할 때, 모든 document가 `_version` 넘버를 가지며, document가 변경될 때마다 증가한다고 이야기 했다. 
 Elasticsearch는 변경 사항이 올바르게 적용되었다는 것을 보장하기 위해, `_version` 넘버를 사용한다. 기존 버전의 document가 새로운 버전보다 늦게 도착하면, 간단히 무시한다.
-
-We can take advantage of the `_version` number to ensure ((("version number (documents)", "using to avoid conflicts")))that conflicting
-changes made by our application do not result in data loss. We do this by
-specifying the `version` number of the document that we wish to change.  If that
-version is no longer current, our request fails.
 
 응용프로그램에 의해 만들어지는 변경 사항의 충돌이, 데이터 손실로 나타나지 않도록 보장하기 위해((("version number (documents)", "using to avoid conflicts"))), 
 '_version' 넘버를 이용할 수 있다. 변경하려는 document의 `버전` 넘버를 지정함으로써 가능하다. 해당 버전이 더 이상 최신이 아니면, 요청은 실패한다.
@@ -138,14 +63,8 @@ PUT /website/blog/1/_create
 --------------------------------------------------
 // SENSE: 030_Data/40_Concurrency.json
 
-The response body tells us that this newly created document has `_version`
-number `1`.  Now imagine that we want to edit the document: we load its data
-into a web form, make our changes, and then save the new version.
-
 응답 body는 새로 생성된 document는 `_version` 넘버 1을 나타낸다. 이 document를 변경한다고 생각해 보자. 
 web form에 이 데이터를 표시하고, 수정하고, 새로운 버전을 저장한다.
-
-First we retrieve the document:
 
 먼저, 이 document를 가져오자:
 
@@ -154,9 +73,6 @@ First we retrieve the document:
 GET /website/blog/1
 --------------------------------------------------
 // SENSE: 030_Data/40_Concurrency.json
-
-
-The response body includes the same `_version` number of `1`:
 
 응답 body는 동일한 `_version` 넘버 1을 포함하고 있다:
 
@@ -175,9 +91,6 @@ The response body includes the same `_version` number of `1`:
 }
 --------------------------------------------------
 
-Now, when we try to save our changes by reindexing the document, we specify
-the `version` to which our changes should be applied:
-
 이제 document를 다시 색인 하여, 변경 사항을 저장하자. 적용하려는 변경 사항에 `버전`을 지정한다.
 
 [source,js]
@@ -189,13 +102,7 @@ PUT /website/blog/1?version=1 <1>
 }
 --------------------------------------------------
 // SENSE: 030_Data/40_Concurrency.json
-<1> We want this update to succeed only if the current `_version` of this
-    document in our index is version `1`.
-	
 <1> index에 있는 document의 현재 `_version`이 버전 `1`인 경우에만 업데이트 되어야 한다.	
-
-This request succeeds, and the response body tells us that the `_version`
-has been incremented to `2`:
 
 이 요청은 성공한다. 그리고 응답 body는 `_version`이 `2`로 증가되었음을 나타낸다.
 
@@ -211,10 +118,6 @@ has been incremented to `2`:
 --------------------------------------------------
 // SENSE: 030_Data/40_Concurrency.json
 
-However, if we were to rerun the same index request, still specifying
-`version=1`, Elasticsearch would respond with a `409 Conflict` HTTP response
-code, and a body like the following:
-
 그러나, 여전히 `version=1`을 지정하여, 동일한 index 요청을 다시 실행하면, Elasticsearch는 HTTP 응답 code 
 `409 Conflict`로 응답할 것이다. body는 아래와 같다:
 
@@ -228,67 +131,27 @@ code, and a body like the following:
 --------------------------------------------------
 // SENSE: 030_Data/40_Concurrency.json
 
-
-This tells us that the current `_version` number of the document in
-Elasticsearch is `2`, but that we specified that we were updating version `1`.
-
 이것은 Elasticsearch에 있는 document의 현재 `_version` 넘버가 `2`인데, 버전 `1`을 업데이트하려 했다고 알려준다.
-
-What we do now depends on our application requirements.  We could tell the
-user that somebody else has already made changes to the document, and to review the changes before trying to save them again.
-Alternatively, as in the case of the widget `stock_count` previously, we could
-retrieve the latest document and try to reapply the change.
 
 이에 따라 해야 할 작업은, 응용프로그램의 요구사항에 따라 달라진다. 다른 이가 이미 document를 변경했다고, 
 다시 저장하기 전에 변경사항을 검토해야 한다고, 사용자에게 알려줘야 한다. 그렇지 않으면, 위의 상품 `재고`의 예처럼, 최신 document를 가져오고, 변경사항을 다시 적용하려 할 것이다.
 
-All APIs that update or delete a document accept a `version` parameter, which
-allows you to apply optimistic concurrency control to just the parts of your
-code where it makes sense.
-
 document는 `버전` 매개변수를 사용해 수정이나 삭제를 위한 모든 API가 낙관적인 동시성 제어를 코드의 일부분에 적용할 수 있도록 한다.
 
-==== Using Versions from an External System
-
 ==== 외부 시스템에서 버전 사용
-
-A common setup is to use some other database as the primary data store and
-Elasticsearch to make the data searchable,((("version number (documents)", "using an external version number")))((("external version numbers"))) which means that all changes to the
-primary database need to be copied across to Elasticsearch as they happen.  If
-multiple processes are responsible for this data synchronization, you may
-run into concurrency problems similar to those described previously.
 
 일반적인 설정은 기본 데이터 저장소로서 다른 데이터베이스를 사용하고, 데이터를 검색 가능하도록((("version number (documents)", "using an external version number")))((("external version numbers"))) Elasticsearch를 사용하는 것이다. 
 즉, 기본 데이터 저장소에서의 모든 수정 사항을, 수정이 발생하자마자, Elasticsearch에 복사할 필요가 있다. 
 멀티프로세스가 데이터 동기화를 책임지고 있다면, 위에서 언급한 것과 유사한 동시성 문제가 발생할 수 있다.
 
-If your main database already has version numbers--or a value such as
-`timestamp` that can be used as a version number--then  you can reuse these
-same version numbers in Elasticsearch by adding `version_type=external` to the
-query string.((("query strings", "version_type=external"))) Version numbers must be integers greater than zero and less than
-about `9.2e+18`--a positive `long` value in Java.
-
 주 데이터베이스가 이미 버전(또는 버전 넘버로 사용될 수 있는 `timestamp` 같은 값) 넘버를 가지고 있다면, 
 query string에((("query strings", "version_type=external"))) `version_type=external`을 추가함으로써, Elasticsearch에 이런 버전을 그대로 쓸 수 있다. 
 버전은 0보다 크고, 9.2e+18`--보다 작은, 정수여야 한다. Java에서는 양수 `long`이다.
 
-The way external version numbers are handled is a bit different from the
-internal version numbers  we discussed previously.  Instead of checking that the
-current `_version` is _the same_ as the one specified in the request,
-Elasticsearch checks that the current `_version` is _less than_ the specified
-version. If the request succeeds, the external version number is stored as the
-document's new `_version`.
-
 외부 버전 넘버를 다루는 방법은, 위에서 언급했던 내부 버전과 약간 다르다. 현재의 `_version`이 요청에 지정된 버전과 _같다_는 것을 확인하는 대신, 
 Elasticsearch는 현재의 버전이 지정한 `_version`보다 _작은지를_ 확인한다. 요청이 성공하면, 외부 버전을 document의 새로운 `_version`으로 저장한다.
 
-External version numbers can be specified not only on
-index and delete requests, but also when _creating_ new documents.
-
 외부 버전은 index, delete 요청뿐만 아니라, 새로운 document를 _생성할_ 때에도 지정할 수 있다.
-
-For instance, to create a new blog post with an external version number
-of `5`, we can do the following:
 
 예를 들면, 외부 버전을 `5`로 해서, 새로운 블로그 포스트를 생성하려면, 아래와 같이 한다:
 
@@ -301,8 +164,6 @@ PUT /website/blog/2?version=5&version_type=external
 }
 --------------------------------------------------
 // SENSE: 030_Data/40_External_versions.json
-
-In the response, we can see that the current `_version` number is `5`:
 
 응답에서, 현재 `_version` 넘버기 `5`라는 것을 볼 수 있다:
 
@@ -317,8 +178,6 @@ In the response, we can see that the current `_version` number is `5`:
 }
 --------------------------------------------------
 
-Now we update this document, specifying a new `version` number of `10`:
-
 이제, 새로운 `버전` 넘버를 `10`으로 해서, 이 document를 업데이트해 보자.
 
 [source,js]
@@ -330,8 +189,6 @@ PUT /website/blog/2?version=10&version_type=external
 }
 --------------------------------------------------
 // SENSE: 030_Data/40_External_versions.json
-
-The request succeeds and sets the current `_version` to `10`:
 
 요청은 성공하고, 현재의 `_version`은 `10`으로 설정된다.
 
@@ -345,10 +202,6 @@ The request succeeds and sets the current `_version` to `10`:
   "created":  false
 }
 --------------------------------------------------
-
-If you were to rerun this request, it would fail with the same conflict error
-we saw before, because the specified external version number is not higher
-than the current version in Elasticsearch.
 
 이 요청을 다시 실행하면, 전에 보았던 것과 동일한 충돌 에러를 내면서, 실패할 것이다. 
 왜냐하면, 지정한 외부 버전이 Elasticsearch의 현재 버전보다 높지 않기 때문이다.

@@ -1,11 +1,5 @@
 [[doc-exists]]
-=== Checking Whether a Document Exists
-
 === document 존재 여부 확인
-
-If all you want to do is to check whether a ((("documents", "checking whether a document exists")))document exists--you're not
-interested in the content at all--then use((("HEAD method")))((("HTTP methods", "HEAD"))) the `HEAD` method instead
-of the `GET` method. `HEAD` requests don't return a body, just HTTP headers:
 
 document의 내용에는 전혀 관심이 없고, document가 존재하는지 여부만을 알고 싶다면((("documents", "checking whether a document exists"))), 
 `GET` 대신에 ((("HEAD method")))((("HTTP methods", "HEAD")))`HEAD` method를 사용한다. `HEAD` 요청은 body를 반환하지 않고, HTTP header만을 반환한다:
@@ -15,8 +9,6 @@ document의 내용에는 전혀 관심이 없고, document가 존재하는지 �
 curl -i -XHEAD http://localhost:9200/website/blog/123
 --------------------------------------------------
 
-Elasticsearch will return a `200 OK` status code if the document exists:
-
 Elasticsearch는 document가 존재하면, `200 OK`라는 상태 코드를 반환한다:
 
 [source,js]
@@ -25,8 +17,6 @@ HTTP/1.1 200 OK
 Content-Type: text/plain; charset=UTF-8
 Content-Length: 0
 --------------------------------------------------
-
-And a `404 Not Found` if it doesn't exist:
 
 그리고, 존재하지 않으면, `Not Found 404`를 반환한다:
 
@@ -41,9 +31,5 @@ HTTP/1.1 404 Not Found
 Content-Type: text/plain; charset=UTF-8
 Content-Length: 0
 --------------------------------------------------
-
-Of course, just because a document didn't exist when you checked it, doesn't
-mean that it won't exist a millisecond later: another process might create the
-document in the meantime.
 
 물론, 단지 그것을 확인할 때, document가 존재하지 않는다는 것이다. 다른 프로세스가 수 milliseconds 내에 document를 생성할 수도 있기 때문에 그 후에도 document가 존재하지 않는다는 것을 의미하지는 않는다.

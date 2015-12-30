@@ -1,12 +1,5 @@
 [[update-doc]]
-=== Updating a Whole Document
-
 === 전체 document 업데이트
-
-Documents in Elasticsearch are _immutable_; we cannot change them.((("documents", "updating whole document")))((("updating documents", "whole document"))) Instead, if
-we need to update an existing document, we _reindex_ or replace it,((("reindexing")))((("indexing", seealso="reindexing"))) which we
-can do using the same `index` API that we have already discussed in
-<<index-doc>>.
 
 Elasticsearch에서 document는 _불변이다_. document를 변경할 수 없다.((("documents", "updating whole document")))((("updating documents", "whole document")))
  대신, 기존의 document를 업데이트하려면, _재색인_ 또는 대체해야((("reindexing")))((("indexing", seealso="reindexing"))) 한다. 
@@ -23,9 +16,6 @@ PUT /website/blog/123
 --------------------------------------------------
 // SENSE: 030_Data/25_Reindex_doc.json
 
-In the response, we can see that Elasticsearch has ((("version number (documents)", "incremented when document replaced")))incremented the `_version`
-number:
-
 응답에서, Elasticsearch가((("version number (documents)", "incremented when document replaced"))) `_version`을 증가시켰음을 알 수 있다:
 
 [source,js]
@@ -38,39 +28,17 @@ number:
   "created":   false <1>
 }
 --------------------------------------------------
-<1> The `created` flag is((("created flag"))) set to `false` because a document with the same
-    index, type, and ID already existed.
-	
 <1> 동일한 index, type, ID를 가지는 document가 이미 존재하기 때문에, `created` flag는 `false`로 설정되어 있다.
-
-Internally, Elasticsearch has marked the old document as deleted and added an
-entirely new document.((("deleted documents"))) The old version of the document doesn't disappear
-immediately, although you won't be able to access it. Elasticsearch cleans up
-deleted documents in the background as you continue to index more data.
 
 내부적으로 Elasticsearch는 기존 document를 삭제된 것으로 표시하고, 완전히 새로운 document를 추가한다.((("deleted documents"))) 
 기존 버전의 document는 비록 access할 수 없지만, 즉시 사라지지는 않는다. 더 많은 데이터의 색인을 계속하면, Elasticsearch는 background에서 삭제된 document를 정리한다.
 
-Later in this chapter, we introduce the `update` API, which can be used to
-make <<partial-updates,partial updates to a document>>. This API _appears_ to
-change documents in place, but actually Elasticsearch is following exactly the
-same process as described previously:
-
 이 장의 후반부에서, <<partial-updates, document의 부분적인 업데이트>>를 이용해 `update` API에 대해 이야기할 것이다. 
 이 API가 원래의 document를 변경하는 것처럼 _보이지만_, 실제로 Elasticsearch는 위에서 언급한 것과 정확히 동일한 프로세스를 따른다:
-
-1. Retrieve the JSON from the old document
-2. Change it
-3. Delete the old document
-4. Index a new document
 
 1. 기존 document에서 JSON을 가져온다,
 2. 그것을 바꾼다.
 3. 기존 document를 지운다.
 4. 새로운 document를 색인 한다.
-
-
-The only difference is that the `update` API achieves this through a single
-client request, instead of requiring separate `get` and `index` requests.
 
 유일한 차이점은 `update` API는 별도의 `get`, `index` 요청을 요구하지 않고, 단일 클라이언트 요청을 통해 이를 처리한다는 것이다.

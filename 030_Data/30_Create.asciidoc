@@ -1,17 +1,7 @@
 [[create-doc]]
-=== Creating a New Document
-
 === 새로운 document 생성
 
-How can we be sure, when we index a document, that((("documents", "creating"))) we are creating an entirely
-new document and not overwriting an existing one?
-
 document를 색인할 때, 기존 document를 덮어쓰는 것이 아니라, ((("documents", "creating"))) 완전히 새로운 것을 생성한다는 것을 어떻게 보장할 수 있을까?
-
-Remember that the combination of `_index`, `_type`, and `_id` uniquely
-identifies a document.  So the easiest way to ensure that our document is new
-is by letting Elasticsearch autogenerate a new unique `_id`, using the `POST`
-version of ((("POST method")))((("HTTP methods", "POST")))the index request:
 
 `_index`, `_type`, `_id`의 조합으로, document를 유일하게 식별할 수 있다는 것을 기억해 보자. 
 따라서 document가 새로운 것이라는 보장하는 가장 가장 쉬운 방법은, index 요청에 ((("POST method")))((("HTTP methods", "POST"))) 
@@ -23,17 +13,9 @@ POST /website/blog/
 { ... }
 --------------------------------------------------
 
-However, if we already have an `_id` that we want to use, then we have to tell
-Elasticsearch that it should accept our index request only if a document with
-the same `_index`, `_type`, and `_id` doesn't exist already. There are two ways
-of doing this, both of which amount to the same thing. Use whichever method is
-more convenient for you.
-
-그러나, 이미 사용하려는 `_id`를 가지고 있다면, 동일한 `_index`, `_type`, `_id`를 가진 document가
- 아직 존재하지 않는 경우에만, Elasticsearch가 index 요청을 받아들이도록 해야 한다. 두 가지 방법이 있는데, 
- 두 가지 모두 마찬가지이다. 편리한 방법을 사용하자.
-
-The first method uses the `op_type` query((("PUT method")))((("HTTP methods", "PUT")))((("query strings", "op_type parameter")))((("op_type query string parameter")))-string parameter:
+그러나, 이미 사용하려는 `_id`를 가지고 있다면, 동일한 `_index`, `_type`, `_id`를 가진 document가 
+아직 존재하지 않는 경우에만, Elasticsearch가 index 요청을 받아들이도록 해야 한다. 두 가지 방법이 있는데, 
+두 가지 모두 마찬가지이다. 편리한 방법을 사용하자.
 
 첫 번째 방법은 `op_type` query((("PUT method")))((("HTTP methods", "PUT")))((("query strings", "op_type parameter")))((("op_type query string parameter")))-string 매개변수를 사용하는 것이다.
 
@@ -43,8 +25,6 @@ PUT /website/blog/123?op_type=create
 { ... }
 --------------------------------------------------
 
-And the second uses the `/_create` endpoint in the URL:
-
 두 번째 방법은 URL의 마지막에 `/_create`를 사용하는 것이다.
 
 [source,js]
@@ -53,14 +33,7 @@ PUT /website/blog/123/_create
 { ... }
 --------------------------------------------------
 
-If the request succeeds in creating a new document, Elasticsearch will
-return the usual metadata and an HTTP response code of `201 Created`.
-
 요청이 새로운 document를 생성하는데 성공하면, Elasticsearch는 일반적인 metadata와 HTTP 응답 code `201 Created`를 반환할 것이다.
-
-On the other hand, if a document ((("Document Already Exists Exception")))with the same `_index`, `_type`, and `_id`
-already exists, Elasticsearch will respond with a `409 Conflict` response
-code, and an error message like the following:
 
 반면에, 동일한 `_index`, `_type`, `_id`를 가진 document가 ((("Document Already Exists Exception"))) 이미 존재하면, 
 Elasticsearch는 아래와 같이응답 code `409 Conflict`와 error 메시지로 응답할 것이다.
