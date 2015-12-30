@@ -1,13 +1,17 @@
 [[document]]
 === What Is a Document?
 
+=== Document 란 무엇인가?
+
 Most entities or objects in most applications can be serialized into a JSON
 object, with keys and values.((("objects")))((("JSON", "objects")))((("keys and values"))) A _key_ is the name of a field or property,
 and a _value_ can ((("values")))be a string, a number, a Boolean, another object, an array
 of values, or some other specialized type such as a string representing a date
 or an object representing a geolocation:
 
-대부분의 응용프로그램에서 대부분의 요소나 오브젝트는 key/value를 통한 JSON 오브젝트로 나타낼 수 있다. _key_는 field나 property의 이름이다. _value_는 문자열, 숫자, boolean, 다른 오브젝트, 배열, 날짜를 나타내는 문자열이나 위치 정보를 나타내는 오브젝트 같은 특별한 형태가 될 수 있다.
+대부분의 응용프로그램에서 대부분의 요소나 오브젝트는 key 와 value를 통한 JSON 오브젝트로 나타낼 수 있다. (("objects")))((("JSON", "objects")))((("keys and values")))
+_key_는 field나 property의 이름이다. _value_는((("values"))) 문자열, 숫자, boolean, 다른 오브젝트, 배열, 날짜를 나타내는 문자열이나 
+위치 정보를 나타내는 오브젝트 같은 특별한 형태가 될 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -41,8 +45,11 @@ other objects. In Elasticsearch, the term _document_ has a specific meaning. It 
 to the top-level, or root object that((("root object"))) is serialized into JSON and
 stored in Elasticsearch under a unique ID.
 
-흔히, 오브젝트와 document라는 단어를 동일한 의미로 사용한다. 그러나 차이가 있다. 오브젝트는 단지 hash, hashmap, dictionary, associative 배열로 알려진 것과 유사한, JSON 오브젝트다. 오브젝트는 다른 오브젝트를 포함할 수 있다. Elasticsearch에서 _document_라는 단어는 특별한 의미를 가지고 있다. 이것은 JSON으로 직렬화되거나 고유한 ID로 Elasticsearch에 저장된 최상위 단계나, root 오브젝트를 나타낸다.
+흔히, _오브젝트_와 _document_라는 단어를 동일한 의미로 사용한다. 그러나 차이가 있다. ((("objects", "documents versus")))((("documents", "objects versus")))  
+오브젝트는 단지 hash, hashmap, dictionary, associative 배열로 알려진 것과 유사한, JSON 오브젝트다. 오브젝트는 다른 오브젝트를 포함할 수 있다. 
+Elasticsearch에서 _document_라는 단어는 특별한 의미를 가지고 있다. 이것은 JSON으로 직렬화되거나 고유한 ID로 Elasticsearch에 저장된 최상위 단계나, root 오브젝트를((("root object"))) 나타낸다.
 
+=== Document Metadata
 
 === Document Metadata
 
@@ -50,27 +57,36 @@ A document doesn't consist only of its data.((("documents", "metadata"))) It als
 _metadata_&#x2014;information _about_ the document.((("metadata, document"))) The three required metadata
 elements are as follows:
 
-document가 데이터만으로 구성되어 있지는 않다. document에 대한 정보인 metadata도 가지고 있다. 3개의 필수 metadata는 아래와 같다.
-
+document가 데이터만으로 구성되어 있지는 않다.((("documents", "metadata"))) document에 _대한_ 정보인 _metadata_&#x2014;도 가지고 있다.((("metadata, document")))  
+3개의 필수 metadata는 아래와 같다.
 
  `_index`::  
    Where the document lives
-   document가 존재하는 장소
    
  `_type`::   
    The class of object that the document represents
-   document를 대표하는 오브젝트 class
    
  `_id`::     
    The unique identifier for the document
-   document의 유일한 id
+
+   
+ `_index`::  
+   document가 존재하는 장소
+   
+ `_type`::   
+   document를 대표하는 오브젝트 class
+   
+ `_id`::     
+   document의 유일한 id   
+
+==== _index
 
 ==== _index
 
 An _index_ is like a database in a relational database; it's the place
 we store and index related data.((("indices", "_index, in document metadata")))
 
-_index_는 RDB에서 데이터베이스와 같다. 데이터를 저장하고 색인 하는 장소이다.
+_index_는 RDB에서 데이터베이스와 같다. 데이터를 저장하고 색인 하는 장소이다.((("indices", "_index, in document metadata")))
 
 [TIP]
 ====
@@ -79,9 +95,13 @@ while an index is just a logical namespace that groups together one or more
 shards.((("shards", "grouped in indices"))) However, this is an internal detail; our application shouldn't care
 about shards at all.  As far as our application is concerned, our documents
 live in an _index_. Elasticsearch takes care of the details.
+====
 
-Elasticsearch에서 데이터는 실제로 _shard_에 저장되고 색인 된다. 반면에 index는 단지 하나 이상의 shard를 함께 모아 놓은, 논리적인 namespace이다. 그러나 이것은 내부적인 세부 사항이다. 응용프로그램은 shard에 대해 전혀 경 쓰지 않아도 된다. 응용프로그램에 있어서 만큼은, document는 _index_에 있다. Elasticsearch가 그 세부 사항을 처리한다.
-
+[TIP]
+====
+Elasticsearch에서 데이터는 실제로 _shard_에 저장되고 색인 된다. 반면에 index는 단지 하나 이상의 shard를 함께 모아 놓은, 논리적인 namespace이다.((("shards", "grouped in indices")))
+그러나 이것은 내부적인 세부 사항이다. 응용프로그램은 shard에 대해 전혀 경 쓰지 않아도 된다. 응용프로그램에 있어서 만큼은, document는 _index_에 있다. 
+Elasticsearch가 그 세부 사항을 처리한다.
 ====
 
 We cover how to create and manage indices ourselves in <<index-management>>,
@@ -89,7 +109,11 @@ but for now we will let Elasticsearch create the index for us.  All we have to
 do is choose an index name.  This name must be lowercase, cannot begin with an
 underscore, and cannot contain commas. Let's use `website` as our index name.
 
-indices를 생성하고 관리하는 방법에 대해서는 <<index-management>>에서 이야기 할 것이다. 그러니 지금 index를 생성해 보자. 먼저 해야 할 일은 index의 이름을 결정하는 것이다. 그 이름은 반드시 소문자여야 한다. ‘_’(underscore)로 시작하거나 ‘,’(comma)를 포함할 수 없다. index 이름을 `website`로 하자.
+indices를 생성하고 관리하는 방법에 대해서는 <<index-management, 색인 관리>>에서 이야기 할 것이다. 
+그러니 지금 index를 생성해 보자. 먼저 해야 할 일은 index의 이름을 결정하는 것이다. 그 이름은 반드시 소문자여야 한다. 
+‘_‘(underscore)로 시작하거나 ‘,‘(comma)를 포함할 수 없다. index 이름을 `website`로 하자.
+
+==== _type
 
 ==== _type
 
@@ -98,14 +122,16 @@ post, a comment, or an email. Each object belongs to a _class_ that defines
 the properties or data associated with an object. Objects in the `user` class
 may have a name, a gender, an age, and an email address.
 
-응용프로그램에서 사용자, 블로그 게시물, 댓글 또는 email 같은 _무언가_를 나타내기 위해 오브젝트를 사용한다. 각 오브젝트는 property나 오브젝트에 관련된 데이터를 정의하는 _class_에 포함된다. `user` class의 오브젝트는 이름, 성별, 나이, email을 가지고 있을 것이다.
+응용프로그램에서 사용자, 블로그 게시물, 댓글 또는 email 같은 _무언가_를 나타내기 위해 오브젝트를 사용한다. 
+각 오브젝트는 property나 오브젝트에 관련된 데이터를 정의하는 _class_에 포함된다. `user` class의 오브젝트는 이름, 성별, 나이, email을 가지고 있을 것이다.
 
 In a relational database, we usually store objects of the same class in the
 same table, because they share the same data structure. For the same reason, in
 Elasticsearch we use the same _type_ for ((("types", "&#x5f;type, in document metadata)))documents that represent the same
 class of _thing_, because they share the same data structure.
 
-RDB에서는 일반적으로 동일한 class의 오브젝트를 동일한 table에 저장한다. 왜냐하면 그것들은 동일한 데이터 구조를 공유하기 때문이다. 같은 이유로 Elasticsearch에서 동일한 class를 나타내는 _무엇인가_를 나타내는 document는 동일한 
+RDB에서는 일반적으로 동일한 class의 오브젝트를 동일한 table에 저장한다. 왜냐하면 그것들은 동일한 데이터 구조를 공유하기 때문이다. 
+같은 이유로 Elasticsearch에서 동일한 class를 나타내는 _무엇인가_를 나타내는 ((("types", "&#x5f;type, in document metadata)))document는 동일한 
 _type_을 사용한다. 왜냐하면 그들은 동일한 데이터 구조를 공유하기 때문이다.
 
 Every _type_ has its own <<mapping,mapping>> or schema ((("mapping (types)")))((("schema definition, types")))definition, which
@@ -114,7 +140,8 @@ in a database table. Documents of all types can be stored in the same index,
 but the _mapping_ for the type tells Elasticsearch how the data in each
 document should be indexed.
 
-모든 type은 해당 type의 document에 대한 데이터 구조를 정의하는, 자신만의 <<mapping,mapping>>이나 schema 구조를 가진다. database-table의 column과 매우 비슷하다. 모든 type의 document는 동일한 index에 저장된다. 그러나 type에 대한 _mapping_은 Elasticsearch에서 각 document가 데이터를 색인하는 방법을 결정한다.
+모든 type은 해당 type의 document에 대한 데이터 구조를 정의하는, 자신만의 <<mapping,mapping>>이나 schema ((("mapping (types)")))((("schema definition, types")))구조를 가진다. 
+database-table의 column과 매우 비슷하다. 모든 type의 document는 동일한 index에 저장된다. 그러나 type에 대한 _mapping_은 Elasticsearch에서 각 document가 데이터를 색인하는 방법을 결정한다.
 
 We show how to specify and manage mappings in <<mapping>>, but for now
 we will rely on Elasticsearch to detect our document's data structure
@@ -125,7 +152,7 @@ automatically.
 A `_type` name can be lowercase or uppercase, but shouldn't begin with an
 underscore or contain commas.((("types", "names of")))  We will use `blog` for our type name.
 
-`_type`의 이름은 소문자나 대문자일 수 있다. 그러나 ‘_’(underscore)로 시작하거나 ‘,’(comma)를 포함할 수 없다. type의 이름을 `blog`로 하자.
+`_type`의 이름은 소문자나 대문자일 수 있다. 그러나 ‘_’(underscore)로 시작하거나 ‘,‘(comma)를 포함할 수 없다.((("types", "names of"))) type의 이름을 `blog`로 하자.
 
 ==== _id
 
@@ -134,7 +161,8 @@ uniquely identifies a document in Elasticsearch. When creating a new document,
 you can either provide your own `_id` or let Elasticsearch generate one for
 you.
 
-_ID_는 Elasticsearch에서 `_index`, `_type`과 함께 조합되어, document를 유일하게 식별할 수 있는 문자열이다. document를 생성할 때, 사용자가 `_id`를 지정하거나, 지정하지 않으면 Elasticsearch에서 자동으로 생성해 준다.
+_ID_는 Elasticsearch에서 `_index`, `_type`과 ((("id", "&#x5f;id, in document metadata")))함께 조합되어, document를 유일하게 식별할 수 있는 문자열이다. 
+document를 생성할 때, 사용자가 `_id`를 지정하거나, 지정하지 않으면 Elasticsearch에서 자동으로 생성해 준다.
 
 ==== Other Metadata
 
@@ -143,4 +171,5 @@ There are several other metadata elements, which are presented in
 document in Elasticsearch and to retrieve it by ID--in other words, to use
 Elasticsearch as a document store.
 
-여러 가지 다른 metadata가 있는데, 그것은 <<mapping>>에서 이야기 할 것이다. 위에서 언급한 요소들로, 이미 Elasticsearch에 document를 저장할 수 있고, ID를 이용하여 검색할 수 있다. 즉, document 저장소로서 Elasticsearch를 사용할 수 있다는 것이다.
+여러 가지 다른 metadata가 있는데, 그것은 <<mapping>>에서 이야기 할 것이다. 위에서 언급한 요소들로, 
+이미 Elasticsearch에 document를 저장할 수 있고, ID를 이용하여 검색할 수 있다. 즉, document 저장소로서 Elasticsearch를 사용할 수 있다는 것이다.

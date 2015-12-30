@@ -9,11 +9,12 @@ the `bulk` API allows((("bulk API"))) us to make multiple `create`, `index`, `up
 to index a data stream such as log events, which can be queued up and indexed
 in batches of hundreds or thousands.
 
-mget이 다수의 document를 한번에 가져오는 것과 마찬가지로, bulk API는 다수의 생성, 색인, 업데이트, 삭제 요청을 한 번에 처리한다. log events같은 데이터를 색인할 필요가 있다면 굉장히 유용하다. 이것은 수백, 수천을 대기하게 하고, 일괄 색인할 수 있다.
+`mget`이 다수의 document를 한번에 가져오는 것과 마찬가지로, `bulk` API는((("bulk API"))) 다수의 `생성`, `색인`, `업데이트`, `삭제` 요청을 한 번에 처리한다. 
+log events같은 데이터를 색인할 필요가 있다면 굉장히 유용하다. 이것은 수백, 수천을 대기하게 하고, 일괄 색인할 수 있다.
 
 The `bulk` request body has the following, slightly unusual, format:
 
-bulk 요청 body는 아래와 같은데, 약간 색다른 format이다.
+`bulk` 요청 body는 아래와 같은데, 약간 색다른 format이다:
 
 [source,js]
 --------------------------------------------------
@@ -27,30 +28,31 @@ bulk 요청 body는 아래와 같은데, 약간 색다른 format이다.
 This format is like a _stream_ of valid one-line JSON documents joined
 together by newline (`\n`) characters.((("\n (newline) characters in bulk requests", sortas="n (newline)"))) Two important points to note:
 
-이 형태는 유효한 한 줄의 JSON document와 줄 바꿈 문자(“\n”)와 함께 결합한 stream과 같다. 두 가지 중요한 사항을 주의하자.
-
 * Every line must end with a newline character (`\n`), _including the last
   line_. These are used as markers to allow for efficient line separation.
-
-* 모든 라인은 마지막 라인을 포함하여, 줄 바꿈 문자(“\n”)로 끝나야 한다. 이것은 효율적인 라인 구분을 위한 구분자로 사용된다.  
   
 * The lines cannot contain unescaped newline characters, as they would
   interfere with parsing. This means that the JSON must _not_ be
   pretty-printed.
 
-* 라인은 분석에 방해가 되는, unescaped된 줄 바꿈 문자(“\n”)를 포함할 수 없다. JSON이 pretty-print되어서는 안 된다는 것을 의미한다.
+이 형태는 유효한 한 줄의 JSON document와 줄 바꿈 문자(`\n`)와((("\n (newline) characters in bulk requests", sortas="n (newline)"))) 함께 결합한 stream과 같다. 
+두 가지 중요한 사항을 주의하자:
+
+* 모든 라인은 _마지막 라인을 포함하여_, 줄 바꿈 문자(`\n`)로 끝나야 한다. 이것은 효율적인 라인 구분을 위한 구분자로 사용된다.  
+  
+* 라인은 분석에 방해가 되는, unescaped된 줄 바꿈 문자(`\n`)를 포함할 수 없다. JSON이 pretty-print되어서는 _안 된다_는 것을 의미한다.
   
 TIP: In <<bulk-format>>, we explain why the `bulk` API uses this format.
 
-TIP: why the funny format? – 왜 이상한 format인가?(p.66)에서 왜 bulk API가 이 형식을 사용하는지를 설명할 것이다.
+TIP: <<bulk-format, 왜 이상한 format인가?>>에서 왜 bulk API가 이 형식을 사용하는지를 설명할 것이다.
 
 The +action/metadata+ line specifies _what action_ to do to _which document_.
 
-action/metadata 라인은 어느(which) document에 어떤 동작(what action)을 할 것인지를 지정하는 것이다.
++action/metadata+ 라인은 _어느 document_에 _어떤 동작_ 을 할 것인지를 지정하는 것이다.
 
 The +action+ must be((("action, in bulk requests"))) one of the following:
 
-action은 아래 값 중의 하나여야 한다.
++action+은 아래 값 중의 하나여야 한다((("action, in bulk requests"))).
 
  `create`:: 
     Create a document only if the document does not already exist. See <<create-doc>>.
@@ -65,25 +67,25 @@ action은 아래 값 중의 하나여야 한다.
     Delete a document. See <<delete-doc>>.
 	
  `create`:: 
-    document가 아직 존재하지 않는 경우에만 document를 생성한다. creating a new document – 새로운 document를 생성하자(p.42)를 참고하자.
+    document가 아직 존재하지 않는 경우에만 document를 생성한다. <<create-doc, 새로운 document 생성>>을 참고하자.
     
  `index`::  
-    새로운 document를 생성하거나, 기존의 document를 대체한다. indexing a document – document를 색인하자.(p.37)와 updating a whole document – 전체 document를 업데이트 하자(p.41)를 참고하자.
+    새로운 document를 생성하거나, 기존의 document를 대체한다. <<index-doc, document 색인>>과 <<update-doc, 전체 document 업데이트>>를 참고하자.
 	
  `update`:: 
-    특정 document에 대한 부분적인 업데이트를 한다. partial updates to documents – document의 부분적인 업데이트(p.48)를 참고하자.
+    특정 document에 대한 부분적인 업데이트를 한다. <<partial-updates, document의 부분적인 업데이트>>를 참고하자.
  
  `delete`:: 
-    document를 삭제한다. Deleting a document – document를 지우자.(p.42)를 참고하자.
+    document를 삭제한다. <<delete-doc, document 삭제>>를 참고하자.
 
 The +metadata+ should ((("metadata, document", "in bulk requests")))specify the `_index`, `_type`, and `_id` of the document
 to be indexed, created, updated, or deleted.
 
-metadata는 색인, 생성, 수정, 삭제하려는 document의 _index, _type 그리고 _id를 지정할 수 있다.
++metadata+는 색인, 생성, 수정, 삭제하려는 document의 `_index`, `_type` 그리고 `_id`를 (("metadata, document", "in bulk requests")))지정할 수 있다.
 
 For instance, a `delete` request could look like this:
 
-예를 들자면, delete 요청은 아래와 같다.
+예를 들자면, `delete` 요청은 아래와 같다.
 
 [source,js]
 --------------------------------------------------
@@ -94,13 +96,14 @@ The +request body+ line consists of the((("request body line, bulk requests"))) 
 and values that the document contains.  It is required for `index` and
 `create` operations, which makes sense: you must supply the document to index.
 
-요청 body 라인은 document의 _source(document가 포함하고 있는 field와 value) 자체로 구성되어 있다. 앞뒤가 맞는 색인(index)과 생성(create) operation이 필요하다. 반드시 색인할 document를 지정해야 한다.
++요청 body+ 라인은 document의((("request body line, bulk requests"))) `_source`(document가 포함하고 있는 field와 value) 자체로 구성되어 있다. 
+앞뒤가 맞는 `색인`과 `생성` 작업이 필요하다. 반드시 색인할 document를 지정해야 한다.
 
 It is also required for `update` operations and should consist of the same
 request body that you would pass to the `update` API: `doc`, `upsert`,
 `script`, and so forth. No +request body+ line is required for a delete.
 
-update 동작을 위해서도 필요하다. update API에 전달한 것(doc, upsert, script 등)과 동일한 요청 body로 구성된다. delete를 위해서는 요청 body가 필요 없다.
+`update` 동작을 위해서도 필요하다. `update` API에 전달한 것(`doc`, `upsert`, `script` 등)과 동일한 요청 body로 구성된다. delete를 위해서는 +요청 body+가 필요 없다.
 
 [source,js]
 --------------------------------------------------
@@ -110,7 +113,7 @@ update 동작을 위해서도 필요하다. update API에 전달한 것(doc, ups
 
 If no `_id` is specified, an ID will be autogenerated:
 
-_id가 지정되지 않으면 ID는 자동으로 생성된다.
+`_id`가 지정되지 않으면 ID는 자동으로 생성된다.
 
 [source,js]
 --------------------------------------------------
@@ -120,7 +123,7 @@ _id가 지정되지 않으면 ID는 자동으로 생성된다.
 
 To put it all together, a complete `bulk` request ((("bulk API", "common bulk request, example")))has this form:
 
-이것 모두를 함께 모으면, 완벽한 bulk 요청은 아래와 같다.
+전부 함께 모은 완벽한 `bulk` 요청은((("bulk API", "common bulk request, example"))) 아래와 같다:
 
 [source,js]
 --------------------------------------------------
@@ -139,13 +142,13 @@ POST /_bulk
     followed immediately by another action.
 <2> Remember the final newline character.
 
-<1> delete는 요청 body를 가지지 않는다. 바로 다른 action이 나온다.
-<2> 마지막 줄 바꿈 문자(“\n”)를 기억하자.
+<1> `delete`는 요청 body를 가지지 않는다. 바로 다른 action이 나온다.
+<2> 마지막에 줄 바꿈 문자를 기억하자.
 
 The Elasticsearch response contains the `items` array,((("items array, listing results of bulk requests")))((("bulk API", "Elasticsearch response"))) which lists the result of
 each request, in the same order as we requested them:
 
-Elasticsearch의 응답은 요청한 것과 동일한 순서로, 각 요청의 결과를 나열한, items 배열을 포함한다.
+Elasticsearch의 응답은 요청한 것과 동일한 순서로, 각 요청의 결과를 나열한, `items` 배열을((("items array, listing results of bulk requests")))((("bulk API", "Elasticsearch response"))) 포함한다.
 
 [source,js]
 --------------------------------------------------
@@ -196,8 +199,8 @@ won't affect the success of the others. If any of the requests fail, the
 top-level  `error` flag is set to `true` and the error details will be
 reported under the relevant request:
 
-각 하위 요청은 독립적으로 실행된다. 따라서 어떤 하위 요청의 실패가 다른 것의 성공에 영향을 미치지 않는다. 어떤 요청이라도 실패하면, top-level의 error flag가 true로 설정되고, 자세한 에러는 관련 있는 요청 아래에 나타난다.
-
+각 하위 요청은 독립적으로 실행된다. 따라서 어떤 하위 요청의 실패가 다른 것의 성공에 영향을 미치지 않는다. 
+어떤 요청이라도 실패하면, top-level의 `error` flag가 `true`로 설정되고, 자세한 에러는 관련 있는 요청 아래에 나타난다:
 
 [source,js]
 --------------------------------------------------
@@ -213,7 +216,7 @@ In the response, we can see that it failed to `create` document `123` because
 it already exists, but the subsequent `index` request, also on document `123`,
 succeeded:
 
-응답에서 123 document가 이미 존재하기 때문에 create가 실패했으나, 이어지는 index 요청(역시 123)은 성공했다는 것을 볼 수 있다.
+응답에서 `123` document가 이미 존재하기 때문에 `create`가 실패했으나, 이어지는 `index` 요청(역시 `123`)은 성공했다는 것을 볼 수 있다.
 
 [source,js]
 --------------------------------------------------
@@ -248,29 +251,32 @@ succeeded:
 <4> The second request succeeded with an HTTP status code of `200 OK`.
 
 <1> 하나 이상의 요청이 실패했다.
-<2> 이 요청에 대한 HTTP status code는 409 Conflict로 나타났다.
+<2> 이 요청에 대한 HTTP 상태 code는 `409 CONFLICT`로 나타났다.
 <3> 왜 요청이 실패했는지를 설명하는 에러 메시지
-<4> 두 번째 요청은 HTTP status code 200 Ok를 가지므로 성공
+<4> 두 번째 요청은 HTTP 상태 code `200 OK`로 성공했다.
 
 
 That also means ((("bulk API", "bulk requests, not transactions")))that `bulk` requests are not atomic: they cannot be used to
 implement transactions.  Each request is processed separately, so the success
 or failure of one request will not interfere with the others.
 
-즉, bulk 요청은 원자성 을 보장하지 않는다. transaction을 구현하는데 사용할 수 없다. 각 요청은 개별적으로 처리되기 때문에, 어떤 요청의 성공, 실패는 다른 요청과 무관하다.
+즉,((("bulk API", "bulk requests, not transactions"))) bulk 요청은 원자성 을 보장하지 않는다. 
+transaction을 구현하는데 사용할 수 없다. 각 요청은 개별적으로 처리되기 때문에, 어떤 요청의 성공, 실패는 다른 요청과 무관하다.
 
 
 
 ==== Don't Repeat Yourself
 
-==== 반복하지 말자
+==== 반복하지 마라
 
 Perhaps you are batch-indexing logging data into the same `index`, and with the
 same `type`. Having to ((("metadata, document", "not repeating in bullk requests")))((("bulk API", "default /_index or _index/_type")))specify the same metadata for every document is a waste.
 Instead, just as for the `mget` API, the `bulk` request accepts a default `/_index` or
 `/_index/_type` in the URL:
 
-동일한 index, 동일한 type에 log 데이터를 일괄 색인 한다고 가정해 보자. 모든 document에 동일한 metadata를 지정하는 것은 낭비이다. 대신, mget API처럼 bulk 요청은 URL에 기본 /_index 또는 /_index/_type을 사용할 수 있다.
+동일한 `index`, 동일한 `type`에 log 데이터를 일괄 색인 한다고 가정해 보자. 모든 document에 동일한 
+metadata를 ((("metadata, document", "not repeating in bullk requests")))((("bulk API", "default /_index or _index/_type")))지정하는 것은 낭비이다. 
+대신, `mget` API처럼 `bulk` 요청은 URL에 기본 `/_index` 또는 `/_index/_type`을 사용할 수 있다:
 
 [source,js]
 --------------------------------------------------
@@ -284,7 +290,7 @@ POST /website/_bulk
 You can still override the `_index` and `_type` in the metadata line, but it
 will use the values in the URL as defaults:
 
-URL에 있는 값들은 기본값으로 사용이 되지만, metadata 라인에 _index, _type을 사용할 수 있다.
+URL에 있는 값들은 기본값으로 사용이 되지만, metadata 라인에 `_index`, `_type`을 사용할 수 있다:
 
 [source,js]
 --------------------------------------------------
@@ -307,18 +313,22 @@ performance no longer improves and may even drop off. The optimal size, however,
 hardware, your document size and complexity, and your indexing and search
 load.  
 
-전체 bulk 요청은 요청을 받을 node의 메모리에 load되어야 한다. 따라서 요청이 클수록, 다른 요청들이 이용할 메모리가 줄어든다. bulk 요청을 위한 적절한 크기가 있다. 그 크기 이상이면 성능은 나아지지 않고, 오히려 떨어진다.
-그러나, 적절한 크기는 고정된 숫자가 아니다. 전적으로 H/W, document의 크기, 복잡함 그리고 색인/검색의 부하에 달려있다. 다행히도 가장 효율적인 숫자는 쉽게 찾을 수 있다.
+전체 bulk 요청은 요청을 받을 node의 메모리에 load되어야 한다. 따라서 요청이 클수록, 다른 요청들이 이용할 메모리가 줄어든다.((("bulk API", "optimal size of requests"))) 
+bulk 요청을 위한 적절한 크기가 있다. 그 크기 이상이면 성능은 나아지지 않고, 오히려 떨어진다. 그러나, 적절한 크기는 고정된 숫자가 아니다. 
+전적으로 H/W, document의 크기와 복잡함 그리고 색인/검색의 부하에 달려있다.
 
 Fortunately, it is easy to find this _sweet spot_: Try indexing typical documents in batches of increasing size. When performance
 starts to drop off, your batch size is too big. A good place to start is with
 batches of 1,000 to 5,000 documents or, if your documents are very
 large, with even smaller batches.
 
-크기를 점점 증가시키면서, 일괄 처리로, 일반적인 document를 색인 해 보자. 성능이 내려가기 시작할 때가 크기가 너무 큰 것이다. 일괄 처리를 시작하기 좋은 지점은 500 ~ 1000건의 document 작업이다. 만약 document가 매우 크다면, 조금 더 작은 크기로 하기 바란다.
+다행히도 _최적의 지점_은 쉽게 찾을 수 있다. 크기를 점점 증가시키면서, 일괄 처리로, 일반적인 document를 색인 해 보자. 
+성능이 내려가기 시작할 때가 크기가 너무 큰 것이다. 일괄 처리를 시작하기 좋은 지점은 1000 ~ 5000건의 document 작업이다. 
+만약 document가 매우 크다면, 조금 더 작은 크기로 하기 바란다.
 
 It is often useful to keep an eye on the physical size of your bulk requests.
 One thousand 1KB documents is very different from one thousand 1MB documents.
 A good bulk size to start playing with is around 5-15MB in size.
 
-bulk 요청의 물리적인 크기를 안다는 것은 때때로 유용하다. 1KB짜리 document 1000건은 1MB짜리 document 1000건과 매우 다르다. 알맞은 bulk size는 5 ~ 15MB 정도이다.
+bulk 요청의 물리적인 크기를 안다는 것은 때때로 유용하다. 1KB짜리 document 1000건은 1MB짜리 document 1000건과 매우 다르다. 
+시작하기 알맞은 bulk size는 5 ~ 15MB 정도이다.

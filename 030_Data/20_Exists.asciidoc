@@ -1,13 +1,14 @@
 [[doc-exists]]
 === Checking Whether a Document Exists
 
-=== document 존재 여부를 확인해 보자
+=== document 존재 여부 확인
 
 If all you want to do is to check whether a ((("documents", "checking whether a document exists")))document exists--you're not
 interested in the content at all--then use((("HEAD method")))((("HTTP methods", "HEAD"))) the `HEAD` method instead
 of the `GET` method. `HEAD` requests don't return a body, just HTTP headers:
 
-document의 내용에는 전혀 관심이 없고, document가 존재하는지 여부만을 알고 싶다면, GET 대신에 HEAD method를 사용한다. HEAD 요청은 body를 반환하지 않고, HTTP header만을 반환한다.
+document의 내용에는 전혀 관심이 없고, document가 존재하는지 여부만을 알고 싶다면((("documents", "checking whether a document exists"))), 
+`GET` 대신에 ((("HEAD method")))((("HTTP methods", "HEAD")))`HEAD` method를 사용한다. `HEAD` 요청은 body를 반환하지 않고, HTTP header만을 반환한다:
 
 [source,js]
 --------------------------------------------------
@@ -16,7 +17,7 @@ curl -i -XHEAD http://localhost:9200/website/blog/123
 
 Elasticsearch will return a `200 OK` status code if the document exists:
 
-Elasticsearch는 document가 존재하면, “200 OK”라는 상태 코드를 반환한다.
+Elasticsearch는 document가 존재하면, `200 OK`라는 상태 코드를 반환한다:
 
 [source,js]
 --------------------------------------------------
@@ -27,7 +28,7 @@ Content-Length: 0
 
 And a `404 Not Found` if it doesn't exist:
 
-그리고, 존재하지 않으면, “Not Found 404”를 반환한다.
+그리고, 존재하지 않으면, `Not Found 404`를 반환한다:
 
 [source,js]
 --------------------------------------------------

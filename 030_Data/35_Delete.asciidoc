@@ -1,12 +1,13 @@
 [[delete-doc]]
 === Deleting a Document
 
-=== document를 지우자
+=== document 삭제
 
 The syntax for deleting a document((("documents", "deleting"))) follows the same pattern that we have seen
 already, but ((("DELETE method", "deleting documents")))((("HTTP methods", "DELETE")))uses the `DELETE` method :
 
-document를 삭제하는 문법은 우리가 이미 보았던 것과 동일한 형태를 가진다. 하지만, DELETE method를 사용한다.
+document를((("documents", "deleting"))) 삭제하는 문법은 우리가 이미 보았던 것과 동일한 형태를 가진다. 하지만, 
+((("DELETE method", "deleting documents")))((("HTTP methods", "DELETE")))`DELETE` method를 사용한다:
 
 [source,js]
 --------------------------------------------------
@@ -18,7 +19,8 @@ If the document is found, Elasticsearch will return an HTTP response code
 of `200 OK` and a response body like the following. Note that the `_version`
 number has been incremented:
 
-document가 발견되면, Elasticsearch는 HTTP 응답 code “200 OK’와, 아래와 같은 응답 body를 반환할 것이다. 버전이 증가했다는 점을 눈 여겨 보자.
+document가 발견되면, Elasticsearch는 HTTP 응답 code `200 OK`와, 아래와 같은 응답 body를 반환할 것이다. 
+`_version` 넘버가 증가했다는 점을 눈 여겨 보자.
 
 [source,js]
 --------------------------------------------------
@@ -34,7 +36,7 @@ document가 발견되면, Elasticsearch는 HTTP 응답 code “200 OK’와, 아
 If the document isn't((("version number (documents)", "incremented for document not found"))) found, we get a `404 Not Found` response code and
 a body like this:
 
-document가 발견되지 않으면 ‘404 Not Found” respond code를 얻고, body는 아래와 같다.
+document가 발견되지 않으면((("version number (documents)", "incremented for document not found"))) `404 Not Found` respond code를 얻고, body는 아래와 같다.
 
 [source,js]
 --------------------------------------------------
@@ -52,12 +54,15 @@ Even though the document doesn't exist (`found` is `false`), the
 bookkeeping, which ensures that changes are applied in the correct order
 across multiple nodes.
 
-비록 document가 존재하지 않더라도(“found”가 false), 버전은 여전히 증가한다. 이것은 변화가 다수의 node에 올바른 순서로 적용되도록 보장하는, 내부적인 부가기록의 일부이다.
+비록 document가 존재하지 않더라도(`found`가 `false`), `_version` 넘버는 여전히 증가한다. 
+이것은 변화가 다수의 node에 올바른 순서로 적용되도록 보장하는, 내부적인 부가기록의 일부이다.
 
 NOTE: As already mentioned in <<update-doc>>, deleting a document doesn't
 immediately remove the document from disk; it just marks it as deleted.
 Elasticsearch will clean up deleted documents in the background as you
 continue to index more data.
 
-NOTE: updating a whole document – 전체 document를 업데이트 하자(p.41)에서 이미 언급했듯이, document를 삭제한다고 해서, 디스크에서 document가 즉시 제거되는 것은 아니다. 단순히 지워진 것으로 표시하는 것이다. Elasticsearch는 더 많은 데이터를 색인 하는 것을 계속하면, background에서 지워진 document를 정리한다.
+NOTE: <<update-doc, document 업데이트>>에서 이미 언급했듯이, document를 삭제한다고 해서, 
+디스크에서 document가 즉시 제거되는 것은 아니다. 단순히 지워진 것으로 표시하는 것이다. Elasticsearch는 
+더 많은 데이터를 색인 하는 것을 계속하면, background에서 지워진 document를 정리한다.
 
