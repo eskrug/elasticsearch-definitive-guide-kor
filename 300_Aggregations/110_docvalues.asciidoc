@@ -8,21 +8,27 @@ problem that can be solved by scaling horizontally--you can always add more
 nodes--you will find that heavy use of aggregations and sorting can exhaust
 your heap space while other resources on the node are underutilized.
 
-in-memory fielddata는 heap의 크기로 제한된다. 이것은 수평확장에 의해 해결할 수 있는 문제(항상 더 많은 node를 추가할 수 있다.)이긴 하지만, node에서 다른 자원이 충분히 활용되지 않으면서, 집계와 정렬의 대량 사용이 heap 공간을 소비하는 경우도 있다.
+in-memory fielddata는 heap의 크기로 제한된다.((("aggregations", "doc values"))) 
+이것은 수평확장에 의해 해결할 수 있는 문제(항상 더 많은 node를 추가할 수 있다.)이긴 하지만, node에서 다른 자원이 충분히 활용되지 않으면서, 
+집계와 정렬의 대량 사용이 heap 공간을 소비하는 경우도 있다.
 
 While fielddata defaults to loading values into memory on the fly, this is not
 the only option. It can also be written to disk at index time in a way that
 provides all the functionality of in-memory fielddata, but without the
 heap memory usage. This alternative format is ((("fielddata", "doc values")))((("doc values")))called _doc values_.
 
-fielddata는 그 값을 메모리에 즉시 로드 하는 것이 기본이지만, 유일한 옵션은 아니다. heap 메모리 사용 없이, in-memory fielddata의 모든 기능을 제공하는 방식으로, 색인 시에, 디스크에 기록할 수도 있다. 이 대안이 되는 형식을 doc values라 한다.
+fielddata는 그 값을 메모리에 즉시 로드 하는 것이 기본이지만, 유일한 옵션은 아니다. 
+heap 메모리 사용 없이, in-memory fielddata의 모든 기능을 제공하는 방식으로, 색인 시에, 디스크에 기록할 수도 있다. 
+이 대안이 되는 형식을 _doc values_라((("fielddata", "doc values")))((("doc values"))) 한다.
 
 Doc values were added to Elasticsearch in version 1.0.0 but, until recently,
 they were much slower than in-memory fielddata.  By benchmarking and profiling
 performance, various bottlenecks have been identified--in both Elasticsearch
 and Lucene--and removed.
 
-doc values는 Elasticsearch 버전 1.0.0에서 추가되었지만, 최근까지 in-memory fielddata보다 훨씬 더 느렸다. 성능에 대한 benchmarking과 profiling을 통해, Elasticsearch와 Lucene 양쪽 모두에서, 다양한 병목현상이 확인되었고, 제거되었다.
+doc values는 Elasticsearch 버전 1.0.0에서 추가되었지만, 최근까지 in-memory fielddata보다 훨씬 더 느렸다. 
+성능에 대한 benchmarking과 profiling을 통해, Elasticsearch와 Lucene 양쪽 모두에서, 
+다양한 병목현상이 확인되었고, 제거되었다.
 
 Doc values are now only about 10&#x2013;25% slower than in-memory fielddata, and
 come with two major advantages:
@@ -39,21 +45,30 @@ come with two major advantages:
 	
 이제, doc values는 in-memory fielddata보다 단지 약 10&#x2013;25% 정도 더 느리고, 두 가지 주요 장점을 제공한다.
 
- *  heap 메모리 대신에 디스크에 있다. 보통의 경우, 메모리에 비해 너무 큰, 많은 fielddata와 함께 동작할 수 있다. 실제로, heap 공간($ES_HEAP_SIZE)을 더 작은 크기로 설정할 수 있어, garbage collection을 빠르게 하고, 결과적으로 node의 안정성을 향상시킨다.
- *  doc values는 검색 시가 아닌 색인 시에 만들어진다. in-memory fielddata는 검색 시에 즉시, inverted index를 uninvert하여 만들어야 하지만, doc values는 미리 만들어지고, 초기화하는 것이 훨씬 빠르다.	
+ *  heap 메모리 대신에 디스크에 있다. 보통의 경우, 메모리에 비해 너무 큰, 많은 fielddata와 함께 동작할 수 있다. 
+	실제로, heap 공간(`$ES_HEAP_SIZE`)을 더 작은 크기로 설정할 수 있어, garbage collection을 빠르게 하고, 
+	결과적으로 node의 안정성을 향상시킨다.
+	
+ *  doc values는 검색 시가 아닌 색인 시에 만들어진다. in-memory fielddata는 검색 시에 즉시, 
+	inverted index를 uninvert하여 만들어야 하지만, doc values는 미리 만들어지고, 
+	초기화하는 것이 훨씬 빠르다.	
 
 The trade-off is a larger index size and slightly slower fielddata access. Doc
 values are remarkably efficient, so for many queries you might not even notice
 the slightly slower speed.  Combine that with faster garbage collections and
 improved initialization times and you may notice a net gain.
 
-trade-off는 size가 더 큰 index와 약간 더 느린 fielddata에 접근하는 것이다. doc values는 매우 효율적이다. 따라서, 많은 query에 대해서 약간 더 느린 속도를 느끼지 못할 수도 있다. 더 빠른 garbage collection과 향상된 초기화 시간의 조합은 장점이 될 수도 있다.
+trade-off는 size가 더 큰 index와 약간 더 느린 fielddata에 접근하는 것이다. 
+doc values는 매우 효율적이다. 따라서, 많은 query에 대해서 약간 더 느린 속도를 느끼지 못할 수도 있다. 
+더 빠른 garbage collection과 향상된 초기화 시간의 조합은 장점이 될 수도 있다.
 
 The more filesystem cache space that you have available, the better doc values
 will perform.  If the files holding the doc values are resident in the filesystem cache, then accessing the files is almost equivalent to reading from
 RAM.  And the filesystem cache is managed by the kernel instead of the JVM.
 
-사용할 수 있는 filesystem cache가 더 많을 수록, doc values는 더 잘 동작한다. doc values를 가지고 있는 파일이 filesystem cache에 있다면, 파일을 액세스하는 것은 RAM을 읽는 것과 거의 같다. 그리고 filesystem cache는 JVM이 아닌 kernel이 관리한다.
+사용할 수 있는 filesystem cache가 더 많을 수록, doc values는 더 잘 동작한다. 
+doc values를 가지고 있는 파일이 filesystem cache에 있다면, 파일을 액세스하는 것은 RAM을 읽는 것과 거의 같다. 
+그리고 filesystem cache는 JVM이 아닌 kernel이 관리한다.
 
 ==== Enabling Doc Values
 
@@ -64,7 +79,9 @@ fields, and for `not_analyzed` string fields.((("doc values", "enabling"))) They
 `analyzed` string fields.  Doc values are enabled per field in the field
 mapping, which means that you can combine in-memory fielddata with doc values:
 
-doc values는 numeric(숫자), date(날짜), boolean, binary, geo-point(위치 정보) field와 not_analyzed string field에 사용할 수 있다. 현재, analyzed string field에는 사용할 수 없다. doc values는 field mapping에서 field별로 사용된다. 즉, in-memory fielddata와 doc values를 조합할 수 있다.
+doc values는 numeric, date, boolean, binary, geo-point field와 `not_analyzed` string field에 사용할 수 있다.((("doc values", "enabling"))) 
+현재, `analyzed` string field에는 사용할 수 없다. doc values는 field mapping에서 field별로 사용된다. 
+즉, in-memory fielddata와 doc values를 조합할 수 있다:
 
 [source,js]
 ----
@@ -83,13 +100,15 @@ PUT /music/_mapping/song
     that is required to use disk-based fielddata instead of in-memory
     fielddata.
 
-<1> field 생성 시에, doc_values를 true로 설정하는 것은, in-memory fielddata 대신 디스크 기반의 fielddata를 사용한다는 의미이다.
+<1> field 생성 시에, `doc_values`를 `true`로 설정하는 것은, 
+	in-memory fielddata 대신 디스크 기반의 fielddata를 사용한다는 의미이다.
 
 That's it!  Queries, aggregations, sorting, and scripts will function as
 normal; they'll just be using doc values now.  There is no other
 configuration necessary.
 
-query, 집계, 정렬, scripts는 일반적인 기능이다. 그것들이 지금 doc values를 사용할 뿐이다. 다른 설정은 불필요하다.
+query, 집계, 정렬, scripts는 일반적인 기능이다. 
+그것들이 지금 doc values를 사용할 뿐이다. 다른 설정은 불필요하다.
 
 [TIP]
 ==================================================
@@ -103,9 +122,8 @@ the near future.
 [TIP]
 ==================================================
 
-마음 놓고 doc values를 사용하자. 더 많이 사용할수록, heap에 두는 것보다 스트레스를 덜 받는다. 가까운 시일 안에 doc values가 기본 형식이 될 것이다.
+마음 놓고 doc values를 사용하자. 더 많이 사용할수록, heap에 두는 것보다 스트레스를 덜 받는다. 
+가까운 시일 안에 doc values가 기본 형식이 될 것이다.
 
 ==================================================
-
-
 
