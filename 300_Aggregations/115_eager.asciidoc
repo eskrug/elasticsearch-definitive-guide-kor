@@ -1,30 +1,12 @@
 [[preload-fielddata]]
-=== Preloading Fielddata
-
 === fielddata의 사전(事前) 로드
-
-The default behavior of Elasticsearch is to ((("fielddata", "pre-loading")))load in-memory fielddata _lazily_.
-The first time Elasticsearch encounters a query that needs fielddata for a
-particular field, it will load that entire field into memory for each segment
-in the index.
 
 Elasticsearch의 기본 동작은((("fielddata", "pre-loading"))) in-memory fielddata를 _지연시켜_ 로드 하는 것이다. 
 Elasticsearch가 특정 field에 대해, fielddata가 필요한, query를 처음으로 만나면, 
 index에 있는 각 segment에 대해, 전체 field를 메모리로 로드 한다.
 
-For small segments, this requires a negligible amount of time.  But if you
-have a few 5 GB segments and need to load 10 GB of fielddata into memory, this
-process could take tens of seconds.  Users accustomed to subsecond response
-times would all of a sudden be hit by an apparently unresponsive website.
-
 작은 segment에서는 무시해도 될 정도의 시간이다. 하지만, 몇 개의 5GB짜리 segment를 가지고 있고, 메모리에 10 GB의 fielddata를 메모리로 로드 해야 한다면, 
 이 과정은 수십 초가 소요될 수 있다. 짧은 응답 시간에 익숙한 사용자들은 응답하지 않는 웹사이트 때문에 놀랄 것이다.
-
-There are three methods to combat this latency spike:
-
-- Eagerly load fielddata
-- Eagerly load global ordinals
-- Prepopulate caches with warmers
 
 이런 응답 시간 문제에 대응하는 세 가지 방법이 있다.
 
@@ -32,33 +14,16 @@ There are three methods to combat this latency spike:
 - global ordinals를 미리 로드(Eagerly load)
 - index warner로 cache를 미리 채우기
 
-All are variations on the same concept: preload the fielddata so that there is 
-no latency spike when the user needs to execute a search.
-
 모두 다 동일한 개념(사용자가 검색을 실행할 때, 응답 시간 문제를 없애기 위해, fielddata를 사전 로드)을 가진 변종이다.
 
 [[eager-fielddata]]
-==== Eagerly Loading Fielddata
-
 ==== fielddata를 미리 로드하자
-
-The first tool is called _eager loading_ (as opposed ((("eager loading", "of fielddata")))to the default lazy
-loading). As new segments are created (by refreshing, flushing, or merging),
-fields with eager loading enabled will have their per-segment fielddata
-preloaded _before_ the segment becomes visible to search.
 
 첫 번째 도구는 _eager loading_(미리 로드, 기본값인 지연 로드와는 대조적으로(("eager loading", "of fielddata")))이라 한다. 
 새로운 segment가 생성(refresh, flush, merge)되면, eager loading이 활성화된 field는, segment가 검색에 표시되기 _전에_, segment별로 fielddata를 미리 로드한다.
 
-This means that the first query to hit the segment will not need to trigger
-fielddata loading, as the in-memory cache has already been populated. This
-prevents your users from experiencing the _cold cache_ latency spike.
-
 즉, segment에 대한 첫 번째 query는 fielddata 로드를 발생시킬 필요가 없다. 왜냐하면, in-memory cache는 이미 채워져 있기 때문이다. 
 _cold cache_로 인한 사용자의 응답 시간 문제를 방지한다.
-
-Eager loading is enabled on a per-field basis, so you can control which fields
-are pre-loaded:
 
 사전(eager) 로드는 기본적으로 field별로 활성화된다. 따라서, 어느 field를 미리 로드할 지를 제어할 수 있다:
 
@@ -74,27 +39,9 @@ PUT /music/_mapping/_song
   }
 }
 ----
-<1> By setting `fielddata.loading: eager`, we tell Elasticsearch to preload
-this field's contents into memory.
-
 <1> `fielddata.loading: eager` 로 설정하여, 이 field의 내용을 메모리로 미리 로드한다.
 
-Fielddata loading can be set to `lazy` or `eager` on existing fields, using
-the `update-mapping` API.
-
 fielddata의 로드는 `update-mapping` API를 사용하여, 기존의 field에 `eager`나 `lazy`로 설정한다. 
-
-[WARNING]
-====
-
-Eager loading simply shifts the cost of loading fielddata.  Instead of paying
-at query time, you pay at refresh time.
-
-Large segments will take longer to refresh than small segments.  Usually,
-large segments are created by merging smaller segments that are already
-visible to search, so the slower refresh time is not important.
-
-====
 
 [WARNING]
 ====
@@ -109,31 +56,13 @@ query시에 지불하는 대신, refresh시에 지급한다.
 ====
 
 [[global-ordinals]]
-==== Global Ordinals
-
 ==== Global Ordinals(전역 서수들??)
 
-One of the techniques used to reduce the memory usage of string
-fielddata is ((("ordinals")))called _ordinals_.
-
 fielddata(특히, 문자열)의 메모리 사용량을 줄이는 데 사용되는 기술 중의 하나가 ((("ordinals")))_ordinal_이다.
-
-Imagine that we have a billion documents, each of which has a `status` field.
-There are only three statuses: `status_pending`, `status_published`,
-`status_deleted`. If we were to hold the full string status in memory for
-every document, we would use 14 to 16 bytes per document, or about 15 GB.
 
 각각 `status` field를 가진, 10억개의 document를 가지고 있다고 가정해 보자. 
 `status_pending`, `status_published`, `status_deleted`의 세 가지 상태가 있다. 
 모든 document가 상태를 모두 문자열로 가지고 있다면, document당 14 ~ 16 byte(약 15GB)를 사용해야 한다.
-
-Instead, we can identify the three unique strings, sort them, and number them: 0, 1, 2.
-
-    Ordinal | Term
-    -------------------
-    0       | status_deleted
-    1       | status_pending
-    2       | status_published
 	
 그 대신, 그것들을 구분하여 정렬하고, 번호를 매길(0, 1, 2) 수 있다. 
 
@@ -142,17 +71,6 @@ Instead, we can identify the three unique strings, sort them, and number them: 0
     0       | status_deleted
     1       | status_pending
     2       | status_published	
-
-The original strings are stored only once in the ordinals list, and each
-document just uses the numbered ordinal to point to the value that it
-contains.
-
-    Doc     | Ordinal
-    -------------------------
-    0       | 1  # pending
-    1       | 1  # pending
-    2       | 2  # published
-    3       | 0  # deleted
 
 ordinal 문자열은 ordinal 목록에 단 한번 저장된다. 
 그리고, 각 document는 그것을 포함한 값을 가리키는 번호가 매겨진 ordinal를 사용할 뿐이다.
@@ -163,77 +81,35 @@ ordinal 문자열은 ordinal 목록에 단 한번 저장된다.
     1       | 1  # pending
     2       | 2  # published
     3       | 0  # deleted
-	
-This reduces memory usage from 15 GB to less than 1 GB!
 
 이것은 메모리 사용량을 15GB에서 1GB이하로 줄인다!
-
-But there is a problem. Remember that fielddata caches are _per segment_.  If
-one segment contains only two statuses&#x2014;`status_deleted` and
-`status_published`&#x2014;then the resulting ordinals (0 and 1) will not be the
-same as the ordinals for a segment that contains all three statuses.
 
 그러나, 문제가 있다. fielddata cache는 _segment별_로 존재한다. 
 어떤 segment가 두 가지 상태&#x2014;(`status_deleted` 와 `status_published`)만을 가지고 있다면, 
 결과가 되는 ordinals(0, 1)은 세 가지 상태 모두를 가지는 segment에 대한 ordinals와 동일하지 않을 것이다.
-
-If we try to run a `terms` aggregation on the `status` field, we need to
-aggregate on the actual string values, which means that we need to identify
-the same values across all segments.  A naive way of doing this would be to
-run the aggregation on each segment, return the string values from each
-segment, and then reduce them into an overall result.  While this would work,
-it would be slow and CPU intensive.
 
 `status` field에 `terms` 집계를 실행하려면, 실제 문자열 값을 집계해야 한다. 
 즉, 모든 segment에서 동일한 값을 확인해야 한다. 이렇게 하는 단순한 방식은 각 segment에서 집계를 실행하고, 
 각 segment에서 문자열 값을 반환하고, 그 다음에 그들을 전체 결과로 축소하는 것이다. 
 이렇게 하면, CPU를 많이 사용하여 느려질 것이다.
 
-Instead, we use a structure called _global ordinals_. ((("global ordinals"))) Global ordinals are a
-small in-memory data structure built on top of fielddata.  Unique values are
-identified _across all segments_ and stored in an ordinals list like the one
-we have already described.
-
 이를 대신하여, _global ordinal_라는 구조를 사용한다.((("global ordinals"))) 
 global ordinal는 fielddata 위에 구축된, 작은 메모리 데이터 구조이다. 
 유일한 값은 _모든 segment_에서 확인되어, 이미 언급한 것처럼 ordinals 목록에 저장된다.
-
-Now, our `terms` aggregation can just aggregate on the global ordinals, and
-the conversion from ordinal to actual string value happens only once at the
-end of the aggregation. This increases performance of aggregations (and
-sorting) by a factor of three or four.
 
 이제, `단어` 집계는 global ordinal에서 집계할 수 있다. 
 ordinal을 실제 문자열 값으로 바꾸는 변환은 집계의 마지막에 한번만 일어난다. 
 이것은 3~4 가지 요소로 인하여, 집계와 정렬의 성능을 증가시킨다.
 
-===== Building global ordinals
-
 ===== global ordinals의 구축
-
-Of course, nothing in life is free. ((("global ordinals", "building"))) Global ordinals cross all segments in an
-index, so if a new segment is added or an old segment is deleted, the global
-ordinals need to be rebuilt.  Rebuilding requires reading every unique term in
-every segment.  The higher the cardinality--the more unique terms that exist--the longer this process takes.
 
 물론, 공짜는 없다.((("global ordinals", "building"))) global ordinal는 index의 모든 segment에 대한 것이다. 
 따라서, 새로운 segment가 생성되거나 오래된 segment가 삭제되면, global ordinal는 다시 구축되어야 한다. 
 다시 구축하려면, 모든 segment에서 유일한 단어 모두를 읽어야 한다. 
 cardinality가 높을수록(유일한 단어가 많을수록), 이 과정이 더 오래 걸린다.
 
-Global ordinals are built on top of in-memory fielddata and doc values.  In
-fact, they are one of the major reasons that doc values perform as well as
-they do.
-
 global ordinal는 in-memory fielddata와 doc values 위에 구축된다. 
 사실, 이것이 doc values만큼 잘 동작할 수 있는 주요한 이유중의 하나이다.
-
-Like fielddata loading, global ordinals are built lazily, by default.  The
-first request that requires fielddata to hit an index will trigger the
-building of global ordinals. Depending on the cardinality of the field, this
-can result in a significant latency spike for your users.  Once global
-ordinals have been rebuilt, they will be reused until the segments in the index
-change: after a refresh, a flush, or a merge.
 
 fielddata 로드와 마찬가지로, global ordinal는 기본적으로, 지연되어 만들어진다. 
 index에 대해 fielddata를 필요로 하는 첫 번째 요청은 global ordinal의 구축을 발생시킨다. 
@@ -241,11 +117,7 @@ field의 cardinality에 따라, 이것은 사용자에게 심각한 응답 시�
 global ordinal가 다시 구축되고 나면, index의 segment에 변화(refresh, flush, merge)가 있을 때까지, 재사용된다.
 
 [[eager-global-ordinals]]
-===== Eager global ordinals
-
 ===== global ordinals의 사전(事前) 구축
-
-Individual string fields((("eager loading", "of global ordinals")))((("global ordinals", "eager"))) can be configured to prebuild global ordinals eagerly:
 
 개별 문자열 field는((("eager loading", "of global ordinals")))((("global ordinals", "eager"))) global ordinal를 미리 구축하도록, 설정될 수 있다.
 
@@ -261,24 +133,10 @@ PUT /music/_mapping/_song
   }
 }
 ----
-<1> Setting `eager_global_ordinals` also implies loading fielddata eagerly.
-
 <1> `eager_global_ordinals`를 설정하여, fielddata의 사전(eager) 로드를 적용한다.
-
-Just like the eager preloading of fielddata, eager global ordinals are built
-before a new segment becomes visible to search.  
 
 fielddata의 사전(eager) 로드와 마찬가지로, eager global ordinal는 
 새로운 segment가 검색에 표시되기 전에 구축된다.
-
-[NOTE]
-=========================
-Ordinals are only built and used for strings.  Numerical data (integers, geopoints,
-dates, etc) doesn't need an ordinal mapping, since the value itself acts as an
-intrinsic ordinal mapping.
-
-Therefore, you can only enable eager global ordinals for string fields.
-=========================
 
 [NOTE]
 =========================
@@ -288,7 +146,6 @@ dates 등)는 값자체가 고유한 서수적 특징을 가지므로 ordinal ma
 따라서 eager global ordinals은 문자열 field에서만 활성화 할 수 있다.
 =========================
 
-Doc values can also have their global ordinals built eagerly:
 doc values 또한 자신의 eager global ordinal를 구축할 수 있다.
 
 [source,js]
@@ -304,33 +161,12 @@ PUT /music/_mapping/_song
   }
 }
 ----
-<1> In this case, fielddata is not loaded into memory, but doc values are
-    loaded into the filesystem cache.
-	
 <1> 이 경우에, fielddata는 메모리에 로드 되지 않는다. 그러나 doc values가 filesystem cache에 로드 된다.	
-
-Unlike fielddata preloading, eager building of global ordinals can have an
-impact on the _real-time_ aspect of your data.  For very high cardinality
-fields, building global ordinals can delay a refresh by several seconds.  The
-choice is between paying the cost on each refresh, or on the first query after
-a refresh.  If you index often and query seldom, it is probably better to pay
-the price at query time instead of on every refresh.
 
 미리 로드 되는 fielddata와 달리, global ordinals의 사전(eager) 구축은 데이터의 _실시간_이라는 측면에 영향을 줄 수 있다. 
 매우 높은 cardinality field의 경우, global ordinals의 구축은 refresh를 몇 초 정도 지연시킬 수 있다. 
 refresh시에 매번 비용을 지불하느냐, 아니면, refresh 후에 첫 번째 query에서 비용을 지불하느냐를 선택해야 한다. 
 자주 색인하고 거의 query를 하지 않는다면, 아마도 refresh할 때마다가 아닌, query시에 비용을 지불하는 것이 더 나을 것이다. 
-
-
-[TIP]
-====
-
-Make your global ordinals pay for themselves. If you have very high
-cardinality fields that take seconds to rebuild, increase the
-`refresh_interval` so that global ordinals remain valid for longer.  This will
-also reduce CPU usage, as you will need to rebuild global ordinals less often.
-
-====
 
 [TIP]
 ====
@@ -344,29 +180,13 @@ global ordinals가 더 오랫동안 유효하도록, `refresh_interval`을 증�
 [[index-warmers]]
 ==== Index Warmers
 
-==== Index Warmers
-
-Finally, we come to _index warmers_.  Warmers((("index warmers"))) predate eager fielddata loading
-and eager global ordinals, but they still serve a purpose. An index warmer
-allows you to specify a query and aggregations that should be run before a new
-segment is made visible to search. The idea is to prepopulate, or _warm_,
-caches so your users never see a spike in latency.
-
 마지막으로 _index warmer_를 보자. warmer는((("index warmers"))) fielddata의 사전(eager) 로드와 사전(eager) global ordinals보다 선행하지만 여전히 유용하다. 
 index warmer는 새로운 segment가 검색에 표시되기 전에, 실행될 query와 집계를 지정할 수 있다. 
 이 개념은 사용자가 응답 시간 문제를 결코 보지 못하게 하기 위해, 미리 채우거나, cache를 _warm_하는 것이다.
 
-Originally, the most important use for warmers was to make sure that fielddata
-was pre-loaded, as this is usually the most costly step.  This is now better
-controlled with the techniques we discussed previously.  However, warmers can
-be used to prebuild filter caches, and can still be used to preload fielddata
-should you so choose.
-
 원래, warmer의 가장 중요한 사용처는 fielddata의 사전 로드를 확인하는 것이었다. 이것은 일반적으로 가장 많은 비용이 소요되는 단계이다. 
 지금은, 이것이 위에서 언급한 기술로 더 잘 제어된다. 그러나, warmer는 filter cache를 미리 만드는데 사용될 수 있고, 
 선택에 따라, fielddata를 미리 로드 하는데 여전히 사용할 수 있다.
-
-Let's register a warmer and then talk about what's happening:
 
 warmer를 등록하고, 무슨 일이 벌어지는지 살펴보자:
 
@@ -397,48 +217,19 @@ PUT /music/_warmer/warmer_1 <1>
   }
 }
 ----
-<1> Warmers are associated with an index (`music`) and are registered using
-the `_warmer` endpoint and a unique ID (`warmer_1`).
-<2> The three most popular music genres have their filter caches prebuilt.
-<3> The fielddata and global ordinals for the `price` field will be preloaded.
-
 <1> warmer는 index(`music`)와 관련되어 있고, 마지막에 `_warmer`를 사용하여 등록되었다. 그리고 `warmer_1`이 고유한 ID이다.
 <2> 3개의 가장 인기 있는 음악 장르는 미리 구축된 자신들의 filter cache를 가지고 있다.
 <3> `price` field에 대한 fielddata와 global ordinal은 미리 로드된다.
 
-Warmers are registered against a specific index.((("warmers", see="index warmers")))  Each warmer is given a
-unique ID, because you can have multiple warmers per index.
-
 warmer는 특정 index에 대해 등록된다.((("warmers", see="index warmers"))) 
 index별로 다수의 warmer를 가질 수 있기 때문에, 각 warmer는 교유한 ID를 가진다.
-
-Then you just specify a query, any query.  It can include queries, filters,
-aggregations, sort values, scripts--literally any valid query DSL.  The
-point is to register queries that are representative of the traffic that your
-users will generate, so that appropriate caches can be prepopulated.
 
 그 다음에 query(어떤 query라도)를 지정하면 된다. 
 query, filter, 집계, 정렬 값 script 등의, 모든 유효한 query DSL 등을 포함할 수 있다. 
 핵심은 적절한 cache가 미리 채워지도록, 사용자가 만들어내는 요청을 대표하는 query를 등록하는 것이다. 
 
-When a new segment is created, Elasticsearch will _literally_ execute the queries
-registered in your warmers.  The act of executing these queries will force
-caches to be loaded.  Only after all warmers have been executed will the segment
-be made visible to search.
-
 새로운 segment가 생성되면, Elasticsearch는 warmer에 등록된 query를 _문자 그대로_ 실행한다. 
 이 query를 실행하여 cache를 로드하는 것이다. 모든 query가 실행된 후에만, segment는 검색에 표시될 것이다.
-
-[WARNING]
-====
-Similar to eager loading, warmers shift the cost of cold caches to refresh time.
-When registering warmers, it is important to be judicious.  You _could_ add
-thousands of warmers to make sure every cache is populated--but that will
-drastically increase the time it takes for new segments to be made searchable.
-
-In practice, select a handful of queries that represent the majority of your
-user's queries and register those.
-====
 
 [WARNING]
 ====
@@ -448,8 +239,4 @@ warmer를 등록할 때에는 신중해야 한다. 모든 cache가 채워지도�
 실제 상황에서는, 사용자의 query 대부분을 대표하는 query 중 소수만을 선택해 등록한다.
 ====
 
-Some administrative details (such as getting existing warmers and deleting warmers) that have been omitted from this explanation.  Refer to the http://bit.ly/1AUGwys[warmers documentation] for the rest
-of the details.
-
 이 설명에서 생략된 관리 세부 사항(현재 warmer를 얻는 방법, warmer의 삭제 방법 등)이 많이 있다. 나머지 세부 사항에 대해서는 http://bit.ly/1AUGwys[warmers 문서]를 참고하자.
-

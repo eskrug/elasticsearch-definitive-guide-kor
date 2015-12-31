@@ -1,45 +1,16 @@
 
-== Closing Thoughts
-
 == 맺음말
-
-This section covered a lot of ground, and a lot of deeply technical issues.
-Aggregations bring a power and flexibility to Elasticsearch that is hard to 
-overstate. The ability to nest buckets and metrics, to quickly approximate
-cardinality and percentiles, to find statistical anomalies in your data, all 
-while operating on near-real-time data and in parallel to full-text search--these are game-changers to many organizations.
 
 이 장은 많은 분야와 깊은 기술적 이슈를 포함하고 있다. 집계는 Elasticsearch에게 놀라운 능력과 유연성을 가져온다. 
 bucket과 metric의 중첩 능력, 빠르고 대략적인 cardinality와 percentiles, 데이터에서 통계적 이상을 찾는 능력, 
 거의 실시간에 가까운 데이터 연산과 full text 검색의 병렬 연산 등등, 이런 것들이 많은 조직에게는 결정적이다.
-
-It is a feature that, once you start using it, you'll find dozens
-of other candidate uses.  Real-time reporting and analytics is central to many
- organizations (be it over business intelligence or server logs).
  
 그것을 사용하기 시작하면, 수십 개의 다른 용도를 찾을 수 있는 기능들이다. 
 실시간 보고 및 분석은 (기업의 정보 수집이나 서버 로그에 그것을 적용하면) 많은 조직에게 아주 중요하다.
 
-But with great power comes great responsibility, and for Elasticsearch that often
-means proper memory stewardship. Memory is often the limiting factor in 
-Elasticsearch deployments, particularly those that heavily utilize aggregations.  
-Because aggregation data is loaded to fielddata--and this is an in-memory data 
-structure--managing ((("aggregations", "managing efficient memory usage")))efficient memory usage is important.
-
 그러나, 큰 힘에는 큰 책임이 따르는데, Elasticsearch에게는 그것이 적절한 메모리 관리를 의미한다. 
 메모리는 흔히 Elasticsearch 배포를 제한(특히 집계를 많이 활용하는 경우)하는 요인이다. 
 집계 데이터는 fielddata(이것은 메모리에 있는 데이터 구조이다)에 로드 되기 때문에, 효율적인 메모리 사용을 관리하는((("aggregations", "managing efficient memory usage"))) 것은 매우 중요하다.
-
-The management of this memory can take several forms, depending on your
-particular use-case:
-
-- At a data level, by making sure you analyze (or `not_analyze`) your data appropriately
-so that it is memory-friendly
-- During indexing, by configuring heavy fields to use disk-based doc values instead
-of in-memory fielddata
-- At search time, by utilizing approximate aggregations and data filtering
-- At a node level, by setting hard memory and dynamic circuit-breaker limits
-- At an operations level, by monitoring memory usage and controlling slow garbage-collection cycles, potentially by adding more nodes to the cluster
 
 이 메모리 관리는 특정 사용 사례에 따라, 다양한 형태를 취할 수 있다:
 
@@ -49,27 +20,13 @@ of in-memory fielddata
 - node 수준에서, 고정적인 메모리 제한과 동적인 자동 차단기(circuit breaker) 제한을 설정한다.
 - 동작 시에, 메모리 사용량을 모니터링하고, 느린 garbage collection 주기를 제어한다. 잠재적으로 cluster에 더 많은 node를 추가한다.
 
-Most deployments will use one or more of the preceding methods.  The exact combination
-is highly dependent on your particular environment.  Some organizations need
-blisteringly fast responses and opt to simply add more nodes.  Other organizations
-are limited by budget and choose doc values and approximate aggregations.
-
 대부분의 배포에서, 위의 방법 중 하나 이상을 사용할 것이다. 정확한 조합은 특정 환경에 따라 다르다. 
 어떤 조직은 매우 빠른 응답을 필요로 하여, 단순히 더 많은 node를 추가하는 것을 선택한다. 
 또 다른 조직은 예산 때문에, doc values와 대략적인 집계를 선택한다.
 
-Whatever the path you take, it is important to assess the available options and
-create both a short- and long-term plan.  Decide how your memory situation exists
-today and what (if anything) needs to be done.  Then decide what will happen in
-six months or one year as your data grows. What methods will you use to continue
-scaling?
-
 어떤 쪽을 선택하든, 사용할 수 있는 옵션을 평가하고, 단기 및 장기 계획 모두를 새우는 것이 중요하다. 
 현재의 메모리 환경이 어떤지를, 무엇이 필요한지를 파악하자. 그 다음에, 데이터가 증가함에 따라, 6개월, 1년 동안 무슨 일이 벌어질지를 예상해 보자. 
 확장을 계속하기 위해, 어떤 방법을 사용할 것인가?
-
-It is better to plan out these life cycles of your cluster ahead of time, rather
-than panicking at 3 a.m. because your cluster is at 90% heap utilization.
 
 cluster가 heap의 90%를 사용하는 것 때문에, 새벽 3시에 고생하는 것보다, 
 미리 cluster의 라이프 사이클을 계획하는 것이 더 낫다.

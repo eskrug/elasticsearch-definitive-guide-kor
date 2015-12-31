@@ -1,19 +1,8 @@
 
-=== significant_terms Demo
-
 === significant_terms 데모
-
-Because the `significant_terms` aggregation((("significant_terms aggregation", "demonstration of")))((("aggregations", "significant_terms", "demonstration of"))) works by analyzing
-statistics, you need to have a certain threshold of data for it to become effective.
-That means we won't be able to index a small amount of example data for the demo.
 
 `significant_terms` 집계는((("significant_terms aggregation", "demonstration of")))((("aggregations", "significant_terms", "demonstration of"))) 통계의 
 분석에 의해 동작하기 때문에, 효율성을 위해, 데이터의 특정 임계 값이 필요하다. 즉, 데모를 하려면, 적은 양의 데이터로는 불가능하다.
-
-Instead, we have a pre-prepared dataset of around 80,000 documents.  This is
-saved as a snapshot (for more information about snapshots and restore, see
-<<backing-up-your-cluster>>) in our public demo repository.  You can "restore"
-this dataset into your cluster by using these commands:
 
 대신, 미리 준비된 약 80,000개의 데이터 집합으로, 데모를 진행하려 한다. 이것은 공개된 데모 저장소에 
 snapshot(snapshot과 restore에 대한 더 많은 정보는 <<backing-up-your-cluster, cluster의 백업>>을 참조)으로 저장되어 있다. 
@@ -36,32 +25,15 @@ POST /_snapshot/sigterms/snapshot/_restore <3>
 GET /mlmovies,mlratings/_recovery <4>
 ----
 // SENSE: 300_Aggregations/75_sigterms.json
-<1> Register a new read-only URL repository pointing at the demo snapshot
-<2> (Optional) Inspect the repository to learn details about available snapshots
-<3> Begin the Restore process.  This will download two indices into your cluster: `mlmovies`
-and `mlratings`
-<4> (Optional) Monitor the Restore process using the Recovery API
-
 <1> demo snapshot을 가리키고 있는 읽기 전용 URL 저장소를 등록한다.
 <2> (선택) 이용할 수 있는 snapshot에 대해 자세히 알기 위해, 저장소를 확인한다.
 <3> restore 프로세스를 시작한다. 이 작업은 cluster에 2개의 index(`mlmovies`, `mlratings`)를 내려받을 것이다.
 <4> (선택) recovery API를 이용하여, restore 프로세스를 확인한다.
 
-NOTE: The dataset is around 50 MB and may take some time to download.
-
 NOTE: 이 데이터 집합은 약 50MB정도이다. 내려 받는데 약간의 시간이 소요될 수 있다.
-
-In this demo, we are going to look at movie ratings by users of MovieLens.  At
-MovieLens, users make movie recommendations so other users can find new
-movies to watch.  For this demo, we are going to recommend movies by using `significant_terms`
-based on an input movie.
 
 이 데모에서, MovieLens 사용자들의 영화 순위를 살펴보려 한다. MovieLens에서는, 다른 사용자들이 새로운 영화를 볼 수 있도록 하기 위하여, 
 사용자들이 영화를 추천할 수 있다. 이 데모에서, 입력한 영화를 바탕으로, `significant_terms`를 사용하여, 영화를 추천하려 한다.
-
-Let's take a look at some sample data, to get a feel for what we are working with.
-There are two indices in this dataset, `mlmovies` and `mlratings`.  Let's look
-at `mlmovies` first:
 
 무엇을 하려는지 알기 위해, 예제 데이터의 일부를 살펴보자. 이 데이터 집합에는 `mlmovies`, `mlratings`라는, 2개의 index가 있다. 먼저, `mlmovies`를 살펴보자.
 
@@ -91,19 +63,10 @@ GET mlmovies/_search <1>
          ....
 ----
 // SENSE: 300_Aggregations/75_sigterms.json
-<1> Execute a search without a query, so that we can see a random sampling of docs.
-
 <1> 예제 document를 무작위로 보기 위해, query 없이 검색을 실행하자.
-
-Each document in `mlmovies` represents a single movie.  The two important pieces
-of data are the `_id` of the movie and the `title` of the movie.  You can ignore
-`offset` and `bytes`; they are artifacts of the process used to extract this
-data from the original CSV files. There are 10,681 movies in this dataset.
 
 `mlmovies`의 각 document는 하나의 영화를 나타낸다. 데이터에서 중요한 2가지는, 영화의 `_id`와 `title`이다. `offset`과 `bytes`는 무시할 수 있다. 
 그것들은 원래의 csv 파일에서, 이 데이터를 뽑아내기 위해 사용된 프로세스의 산물이다. 이 데이터 집합에는 10,681개의 영화가 있다.
-
-Now let's look at `mlratings`:
 
 이제, `mlratings`를 살펴보자.
 
@@ -137,35 +100,17 @@ GET mlratings/_search
          ...
 ----
 // SENSE: 300_Aggregations/75_sigterms.json
-
-Here we can see the recommendations of individual users.  Each document represents
-a single user, denoted by the `user` ID field.  The `movie` field holds a list
-of movies that this user watched and recommended.
-
 여기에서, 개별 사용자의 추천을 볼 수 있다. 각 document는, `user` field에 의해 구분되는데, 단일 사용자를 나타낸다. 
 `movie` field는 이 사용자가 보고 추천한 영화의 목록이다.
 
-==== Recommending Based on Popularity
-
 ==== 인기를 기준으로 한 추천
-
-The first strategy we could take is trying to recommend movies based on popularity.((("popularity", "movie recommendations based on")))
-Given a particular movie, we find all users who recommended that movie.  Then
-we aggregate all their recommendations and take the top five most popular.
 
 첫 번째 전략은, 인기를 기준으로, 영화를 추천하려 한다.((("popularity", "movie recommendations based on"))) 
 특정 영화에 대해, 해당 영화를 추천한 모든 사용자를 찾는다. 그리고, 그들의 추천 모두를 집계하고, 가장 인기 있는 상위 5개를 가져온다. 
 
-We can express that easily with a `terms` aggregation ((("terms aggregation", "movie recommendations (example)")))and some filtering.  Let's
-look at _Talladega Nights_, a comedy about NASCAR racing starring
-Will Ferrell.  Ideally, our recommender should find other comedies in a similar
-style (and more than likely also starring Will Ferrell).
-
 `terms` 집계와((("terms aggregation", "movie recommendations (example)"))) 약간의 필터링으로 쉽게 표현할 수 있다. 
 윌 페럴(Will Ferrel)이 주연한, NASCAR 에 대한 코미디, Talladega Nights를 살펴 보자. 
 이상적으로는, 추천인은 비슷한 스타일의 다른 코미디를 (그리고, 윌 페럴이 주연한 더 많은 영화를) 찾아야 한다.
-
-First we need to find the _Talladega Nights_ ID:
 
 먼저, _Talladega Nights_의 ID를 찾아야 한다.
 
@@ -196,12 +141,7 @@ GET mlmovies/_search
     ...
 ----
 // SENSE: 300_Aggregations/75_sigterms.json
-<1> _Talladega Nights_ is ID `46970`.
-
 <1> _Talladega Nights_의 ID는 `46970`이다.
-
-Armed with the ID, we can now filter the ratings and ((("filtering", "in aggregations")))apply our `terms` aggregation
-to find the most popular movies from people who also like _Talladega Nights_:
 
 ID를 찾았으면, 순위를 필터링하고,((("filtering", "in aggregations"))) _Talladega Nights_처럼, 
 사람들로부터 가장 인기 있는 동영상을 찾기 위해, `terms` 집계를 적용할 수 있다.
@@ -230,29 +170,14 @@ GET mlratings/_search?search_type=count <1>
 }
 ----
 // SENSE: 300_Aggregations/75_sigterms.json
-<1> We execute our query on `mlratings` this time, and specify `search_type=count`
-since we are interested only in the aggregation results.
-<2> Apply a filter on the ID corresponding to _Talladega Nights_.
-<3> Finally, find the most popular movies by using a `terms` bucket.
-
 <1> 이번에는 `mlratings`에 query를 실행한다. 그리고 집계 결과에만 관심이 있기 때문에, `search_type=count`를 지정한다.
 <2> _Talladega Nights_에 해당하는 ID를 filter에 적용한다.
 <3> 마지막으로, `terms` bucket을 사용해, 가장 인기 있는 영화를 찾는다.
-
-We perform the search on the `mlratings` index, and apply a filter for the ID of
-_Talladega Nights_.  Since aggregations operate on query scope, this will
-effectively filter the aggregation results to only the users who recommended
-_Talladega Nights_. Finally, we execute ((("terms aggregation", "movie recommendations (example)")))a `terms` aggregation to bucket the most
-popular movies.  We are requesting the top six results, since it is likely
-that _Talladega Nights_ itself will be returned as a hit (and we don't want
-to recommend the same movie).
 
 `mlratings` index에 검색을 실행하고, _Talladega Nights_의 ID를 filter에 적용한다. 
 집계 연산은 query 범위에서 작동하므로, 이것은 실질적으로, _Talladega Nights_를 추천한 사용자로, 집계 결과를 필터링할 것이다. 
 마지막으로, 가장 인기 있는 영화 bucket으로, ((("terms aggregation", "movie recommendations (example)")))`terms` 집계를 실행한다. 
 _Talladega Nights_ 자체도 hit 중의 하나로 반환될 것으로 보여, (그리고, 동일한 영화를 추천하는 것을 원하지 않기 때문에) 상위 6개의 결과를 요청하고 있다.
-
-The results come back like so:
 
 결과는 아래처럼 반환된다:
 
@@ -299,9 +224,6 @@ The results come back like so:
 ...
 ----
 
-We need to correlate these back to their original titles, which can be done
-with a simple filtered query:
-
 간단한 filtered query를 사용하여, 이 결과를 그들의 원래 제목으로 바꿀 수 있다:
 
 [source,js]
@@ -321,14 +243,6 @@ GET mlmovies/_search
 ----
 // SENSE: 300_Aggregations/75_sigterms.json
 
-And finally, we end up with the following list:
-
-1. Matrix, The
-2. Shawshank Redemption
-3. Pulp Fiction
-4. Fight Club
-5. Star Wars Episode IV: A New Hope
-
 그래서 마침내, 다음과 같은 목록을 얻을 수 있다:
 
 1. Matrix, The
@@ -337,18 +251,9 @@ And finally, we end up with the following list:
 4. Fight Club
 5. Star Wars Episode IV: A New Hope
 
-OK--well that is certainly a good list!  I like all of those movies.  But that's
-the problem: most _everyone_ likes that list.  Those movies are universally
-well-liked, which means they are popular on everyone's recommendations.  The
-list is basically a recommendation of popular movies, not recommendations related
-to _Talladega Nights_.
-
 자. 확실히 괜찮은 목록이다. 저 영화 모두를 좋아한다. 하지만, 대부분의 사람들이 저 목록을 좋아할지는, 
 실제로 알 수 없다. 저 영화들은 보편적으로 많은 사랑을 받는다. 즉, 저 영화들이 _모든 이들_이 추천할 정도로 인기가 있다. 
 이 목록은 _Talladega Nights_와 관련된 추천이 아닌, 인기 있는 영화의 추천이다.
-
-This is easily verified by running the aggregation again, but without the filter
-on _Talladega Nights_.  This will give a top-five most popular movie list:
 
 이것은 _Talladega Nights_에 대한 filter 없이, 다시 집계를 실행해 보면, 쉽게 확인할 수 있다. 
 이것은 가장 인기 있는 상위 5개의 영화 목록이다:
@@ -369,14 +274,6 @@ GET mlratings/_search?search_type=count
 ----
 // SENSE: 300_Aggregations/75_sigterms.json
 
-This returns a list that is very similar:
-
-1. Shawshank Redemption
-2. Silence of the Lambs, The
-3. Pulp Fiction
-4. Forrest Gump
-5. Star Wars Episode IV: A New Hope
-
 반환된 목록은 위의 결과와 아주 유사하다:
 
 1. Shawshank Redemption
@@ -385,33 +282,16 @@ This returns a list that is very similar:
 4. Forrest Gump
 5. Star Wars Episode IV: A New Hope
 
-Clearly, just checking the most popular movies is not sufficient to build a good,
-discriminating recommender.
-
 확실히, 단지 가장 인기 있는 영화를 확인하는 것은, 좋은, 실력 있는 추천인을 구축하기에는 충분하지 않다.
 
-==== Recommending Based on Statistics
-
 ==== 통계를 기준으로 한 추천
-
-Now that the scene is set, let's try using `significant_terms`.  `significant_terms` will analyze
-the group of people who enjoy _Talladega Nights_ (the _foreground_ group) and
-determine what movies are most popular. ((("statistics, movie recommendations based on (example)"))) It will then construct a list of
-popular films for everyone (the _background_ group) and compare the two.
 
 이제 무대가 마련되었으니, `significant_terms`를 사용해 보자. `significant_terms`는 _Talladega Nights_를 좋아하는 사람들의 그룹(_foreground_ 그룹)을 분석하고, 가장 인기 있는 영화가 무엇인지를 결정한다.((("statistics, movie recommendations based on (example)"))) 
 그래서, 모든 이에게(_background_ 그룹) 인기 있는 영화의 목록을 만들고, 그 둘을 비교한다.
 
-The statistical anomalies will be the movies that are _over-represented_ in the
-foreground compared to the background.  Theoretically, this should be a list
-of comedies, since people who enjoy Will Ferrell comedies will recommend them
-at a higher rate than the background population of people.
-
 통계적 이상은, background에 비해, foreground에 _너무 많이 나타나는_ 영화일 것이다. 
 이론적으로, Will Ferrel의 코미디를 즐기는 사람들은, background에서 좋아하는 사람들보다 더 높은 비율로, 
 그 영화를 추천할 것이기 때문에, 이것은 코미디 목록이 될 것이다.
-
-Let's give it a shot:
 
 한 번 해 보자.
 
@@ -439,21 +319,11 @@ GET mlratings/_search?search_type=count
 }
 ----
 // SENSE: 300_Aggregations/75_sigterms.json
-<1> The setup is nearly identical -- we just use `significant_terms` instead of
-`terms`.
 
 <1> 설정은 거의 동일하다. terns 대신에 `siginificant_terms`를 사용했을 뿐이다.
 
-As you can see, the query is nearly the same.  We filter for users who
-liked _Talladega Nights_; this forms the foreground group.  By default,
-`significant_terms` will use the entire index as the background, so we don't need to do
-anything special.
-
 보다시피, query는 거의 동일하다. _Talladega Nights_;를 좋아하는 사용자를 필터링했다. 이것은 foreground 그룹을 형성한다. 
 기본적으로, `significant_terms`는 background로 전체 index를 사용한다. 때문에, 특별히 더 해야 할 것은 없다.
-
-The results come back as a list of buckets similar to `terms`, but with some
-extra ((("buckets", "returned by significant_terms aggregation")))metadata:
 
 결과는 `terms`와 유사한, bucket의 목록으로 반환된다. 그러나 몇 개의 추가 ((("buckets", "returned by significant_terms aggregation")))metadata가 있다:
 
@@ -509,50 +379,21 @@ extra ((("buckets", "returned by significant_terms aggregation")))metadata:
          ]
  ...
 ----
-<1> The top-level `doc_count` shows the number of docs in the foreground group.
-<2> Each bucket lists the key (for example, movie ID) being aggregated.
-<3> A `doc_count` for that bucket.
-<4> And a background count, which shows the rate at which this value appears in
-the entire background.
-
 <1> 최 상위 단계의 `doc_count`는 foreground 그룹의 document 수를 나타낸다. 
 <2> 각 bucket은 집계된 key(예: 영화 ID)를 나열한다.
 <3> 해당 bucket의 `doc_count`
 <4> 그리고 background 수, 전체 background에서 이 값이 나타나는 비율을 보여준다.
 
-You can see that the first bucket we get back is _Talladega Nights_.  It is
-found in all 271 documents, which is not surprising.  Let's look at the next bucket:
-key `52245`.
-
 첫 번째 bucket이 _Talladega Nights_임을 알 수 있다. 놀랄 필요도 없이, 
 모두 271개의 document가 발견되었다. 다음 bucket(key: `52245`)를 보자.
-
-This ID corresponds to _Blades of Glory_, a comedy about male figure skating
-that also stars Will Ferrell.  We can see that it was recommended 59 times by
-the people who also liked _Talladega Nights_.  This means that 21% of the foreground
-group recommended _Blades of Glory_ (`59 / 271 = 0.2177`).
 
 이 ID는 _Blades of Glory_에 해당한다. 남자 피겨 스케이팅에 대한 코미디로, 
 Will Ferrel이 주연했다. Talladega Nights를 좋아하는 사람들이 59회나 추천한 것을 알 수 있다. 
 즉, foreground 그룹의 21%(`59 / 271 = 0.2177`)가 _Blades of Glory_를 추천했다.
 
-In contrast, _Blades of Glory_ was recommended only 185 times in the entire dataset,
-which equates to a mere 0.26% (`185 / 69796 = 0.00265`).  _Blades of Glory_ is therefore
-a statistical anomaly: it is uncommonly common in the group of people who
-like _Talladega Nights_.  We just found a good recommendation!
-
 대조적으로, _Blades of Glory_는 전체 데이터 집합에서 불과 0.26%(185 / 69796 = 0.00265)에 해당하는, 185회만 추천되었다. 
 따라서, _Blades of Glory_는 통계적 이상이다. _Talladega Nights_를 좋아하는 사람들의 그룹에서 드물게 흔한 경우이다. 
 단지 적당한 추천 영화를 발견했을 뿐이다.
-
-If we look at the entire list, they are all comedies that would fit as good
-recommendations (many of which also star Will Ferrell):
-
-1. Blades of Glory
-2. Anchorman: The Legend of Ron Burgundy
-3. Semi-Pro
-4. Knocked Up
-5. 40-Year-Old Virgin, The
 
 전체 목록을 보면, 그것은 모두, 추천하기에 좋은, 딱 맞는 (Will Ferrel이 주연한)코미디이다.
 
@@ -561,10 +402,6 @@ recommendations (many of which also star Will Ferrell):
 3. Semi-Pro
 4. Knocked Up
 5. 40-Year-Old Virgin, The
-
-This is just one example of the power of `significant_terms`. Once you start using
-`significant_terms`, you find many situations where you don't want the most popular--you want the most uncommonly common.  This simple aggregation can uncover some
-surprisingly sophisticated trends in your data.
 
 이것은 `significant_terms`의 위력을 보여주는 한 가지 예제에 불과하다. 
 `significant_terms`를 사용하기 시작하면, 가장 드물게 흔한 것을 원하지만, 

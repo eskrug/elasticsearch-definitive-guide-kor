@@ -1,26 +1,9 @@
 [[fielddata]]
 === Fielddata
 
-=== Fielddata
-
-Aggregations work via a data structure known as _fielddata_ (briefly introduced
-in <<fielddata-intro>>).  ((("fielddata")))((("memory usage", "fielddata")))Fielddata is often the largest consumer of memory
-in an Elasticsearch cluster, so it is important to understand how it works.
-
 집계는 _fielddata_(<<fielddata-intro, fielddata 소개>>에서 간단히 소개된)로 알려진 데이터 구조를 통해, 
 동작한다. ((("fielddata")))((("memory usage", "fielddata")))fielddata는 Elasticsearch의 cluster에서, 
 메모리의 가장 큰 소비자이다. 때문에, 그것이 동작하는 방법을 이해하는 것은 중요하다.
-
-[TIP]
-==================================================
-
-Fielddata can be loaded on the fly into memory, or built at index time and
-stored on disk.((("fielddata", "loaded into memory vs. on disk")))  Later, we will talk about on-disk fielddata in
-<<doc-values>>. For now we will focus on in-memory fielddata, as it is
-currently the default mode of operation in Elasticsearch. This may well change
-in a future version.
-
-==================================================
 
 [TIP]
 ==================================================
@@ -32,34 +15,10 @@ fielddata는 메모리에 바로 로드 되거나, 색인 시에 구축되어 �
 
 ==================================================
 
-Fielddata exists because inverted indices are efficient only for certain operations.
-The inverted index excels((("inverted index", "fielddata versus"))) at finding documents that contain a term.  It does not
-perform well in the opposite direction: determining which terms exist in a single
-document. Aggregations need this secondary access pattern.
-
 inverted indices는 특정 작업에 대해서만 효율적이기 때문에, fielddata는 존재한다. 
 inverted index는((("inverted index", "fielddata versus"))) 단어를 포함하는 document를 찾는 것에 탁월하다. 
 정반대의 방향(단어가 어떤 하나의 document에 존재하는지를 판단하는 것)에서는 잘 동작하지 않는다. 
 집계는 이 두 번째 액세스 형태가 필요하다.
-
-Consider the following inverted index:
-
-    Term      Doc_1   Doc_2   Doc_3
-    ------------------------------------
-    brown   |   X   |   X   |
-    dog     |   X   |       |   X
-    dogs    |       |   X   |   X
-    fox     |   X   |       |   X
-    foxes   |       |   X   |
-    in      |       |   X   |
-    jumped  |   X   |       |   X
-    lazy    |   X   |   X   |
-    leap    |       |   X   |
-    over    |   X   |   X   |   X
-    quick   |   X   |   X   |   X
-    summer  |       |   X   |
-    the     |   X   |       |   X
-    ------------------------------------
 
 다음의 inverted index를 고려해 보자:
 	
@@ -79,9 +38,6 @@ Consider the following inverted index:
     summer  |       |   X   |
     the     |   X   |       |   X
     ------------------------------------
-
-If we want to compile a complete list of terms in any document that mentions
-+brown+, we might build a query like so:
 
 +brown+을 언급하는 document에서, 단어의 완벽한 목록을 만들려면, 아래와 같은 query를 만들 어야 한다:
 
@@ -104,36 +60,13 @@ GET /my_index/_search
 }
 ----
 
-The query portion is easy and efficient.  The inverted index is sorted by
-terms, so first we find +brown+ in the terms list, and then scan across all the
-columns to see which documents contain +brown+.  We can very quickly see that
-`Doc_1` and `Doc_2` contain the token +brown+.
-
 query 부분은 간단하고 효율적이다. inverted index는 단어를 기준으로 정렬된다. 그래서, 먼저 단어 목록에서 +brown+을 찾고, 
 그 다음에 +brown+을 포함하는 document를 찾기 위해, column 전부를 검색한다. `Doc_1`과 `Doc_2`가 token +brown+을 포함하는 것을, 매우 빠르게 볼 수 있다.
-
-Then, for the aggregation portion, we need to find all the unique terms in
-`Doc_1`  and `Doc_2`.((("aggregations", "fielddata", "using instead of inverted index")))  Trying to do this with the inverted index would be a
-very expensive process: we would have to iterate over every term in the index
-and collect tokens from `Doc_1`  and `Doc_2` columns.  This would be slow
-and scale poorly: as the number of terms and  documents grows, so would the
-execution time.
 
 그 다음에 집계 부분에서, `Doc_1`과 `Doc_2`에 있는 유일한 단어를 검색해야 한다.((("aggregations", "fielddata", "using instead of inverted index")))
 inverted index에서 이렇게 하면, 비용이 많이 드는 프로세스가 될 것이다. 
 index에서 모든 단어에 대해 반복해야 하고, `Doc_1`과 `Doc_2`의 column에서 token을 수집해야 한다. 
 이것은 매우 느리고, 조정도 어렵다. 단어와 document의 수가 증가할수록, 실행시간도 증가할 것이다.
-
-Fielddata addresses this problem by inverting the relationship. While the
-inverted index maps terms to the documents containing the term, fielddata
-maps documents to the terms contained by the document:
-
-    Doc      Terms
-    -----------------------------------------------------------------
-    Doc_1 | brown, dog, fox, jumped, lazy, over, quick, the
-    Doc_2 | brown, dogs, foxes, in, lazy, leap, over, quick, summer
-    Doc_3 | dog, dogs, fox, jumped, over, quick, the
-    -----------------------------------------------------------------
 
 fielddata는 그 관계를 반대로 하여, 이 문제를 해결한다. 
 inverted index는 단어를 단어를 포함하고 있는 document에 mapping하는 반면에, 
@@ -146,23 +79,8 @@ fielddata는 document를 document에 의해 포함되는 단어에 mapping한다
     Doc_3 | dog, dogs, fox, jumped, over, quick, the
     -----------------------------------------------------------------
 
-Once the data has been uninverted, it is trivial to collect the unique tokens from
-`Doc_1` and `Doc_2`.  Go to the rows for each document, collect all the terms, and
-take the union of the two sets.
-
 데이터가 uninverted되면, `Doc_1`과 `Doc_2`에서 유일한 token을 수집하는 것은 간단하다. 
 각 document의 행으로 가서, 단어 모두를 수집하고, 두 집합을 조합하면 된다.
-
-
-[TIP]
-==================================================
-
-The fielddata cache is per segment.((("fielddata cache")))((("segments", "fielddata cache"))) In other words, when a new segment becomes
-visible to search, the fielddata cached from old segments remains valid. Only
-the data for the new segment needs to be loaded into memory.
-
-==================================================
-
 
 [TIP]
 ==================================================
@@ -173,29 +91,11 @@ fielddata cache는 segment별이다.((("fielddata cache")))((("segments", "field
 
 ==================================================
 
-Thus, search and aggregations are closely intertwined.  Search finds documents
-by using the inverted index.  Aggregations collect and aggregate values from
-fielddata, which is itself generated from the inverted index.
-
 따라서, 검색과 집계는 밀접하게 엮여 있다. 검색은 inverted index를 이용하여, document를 찾는다. 
 집계는 fielddata에서 값을 수집하고 집계한다. fielddata 자체는 inverted index에서 생성된다.
 
-The rest of this chapter covers various functionality that either
-decreases fielddata's memory footprint or increases execution speed.
-
 이 장의 나머지 부분은 fielddata의 메모리 공간을 줄이거나, 
 실행 속도를 증가시키는 등의 다양한 기능에 대해 이야기할 것이다.
-
-[NOTE]
-==================================================
-
-Fielddata is not just used for aggregations.((("fielddata", "uses other than aggregations")))  It is required for any
-operation that needs to look up the value contained in a specific document.
-Besides aggregations, this includes sorting, scripts that access field
-values, parent-child relationships (see <<parent-child>>), and certain types
-of queries or filters, such as the <<geo-distance,`geo_distance`>> filter.
-
-==================================================
 
 [NOTE]
 ==================================================

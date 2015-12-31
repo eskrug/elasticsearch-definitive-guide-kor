@@ -1,22 +1,11 @@
 
-== Filtering Queries and Aggregations
-
 == query와 aggregation의 필터링
-
-A natural extension to aggregation scoping is filtering.  Because the aggregation
-operates in the context of the query scope, any filter applied to the query
-will also apply to the aggregation.
 
 aggregation 범위 지정에 대한 자연스러운 확장은 필터링이다. aggregation은 query의 범위 지정 문맥에서 동작하므로, query에 적용된 어떠한 filter도 aggregation에 적용된다.
 
-
 [float="true"]
-=== Filtered Query
 
 === 필터된 Query
-
-If we want to find all cars over $10,000 and also calculate the average price
-for those cars,((("filtering", "serch query results")))((("filtered query")))((("queries", "filtered"))) we can simply use a `filtered` query:
 
 $10,000 이상의 모든 자동차와 그 차들의 평균가를 계산하려면,((("filtering", "serch query results")))((("filtered query")))((("queries", "filtered"))) 
 단순하게 `filtered` query를 사용할 수 있다:
@@ -45,42 +34,21 @@ GET /cars/transactions/_search?search_type=count
 --------------------------------------------------
 // SENSE: 300_Aggregations/45_filtering.json
 
-Fundamentally, using a `filtered` query is no different from using a `match`
-query, as we discussed in the previous chapter.  The query (which happens to include
-a filter) returns a certain subset of documents, and the aggregation operates
-on those documents.
-
 기본적으로, `filtered` query를 사용하는 것은, 지난 장에서 설명한 것처럼, `match` query를 사용하는 것과 차이가 없다. 
 query(filter를 포함하는 query)는 document의 특정 부분집합을 반환하고, aggregation은 해당 document에 대해 동작한다.
 
 [float="true"]
 === Filter Bucket
 
-But what if you would like to filter just the aggregation results?((("filtering", "aggregation results, not the query")))((("aggregations", "filtering just aggregations")))  Imagine we 
-are building the search page for our car dealership.  We want to display
-search results according to what the user searches for.  But we also want
-to enrich the page by including the average price of cars (matching the search)
-that were sold in the last month.
-
 하지만, 집계 결과를 필터링하고 싶다면?((("filtering", "aggregation results, not the query")))((("aggregations", "filtering just aggregations"))) 
 자동차 대리점을 위한, 검색 페이지를 구현한다고 가정해 보자. 사용자의 검색 내용에 따라, 검색 결과를 표시해야 한다. 
 그러나, 지난 달에 판매된 (검색에 일치하는) 자동차의 평균 가격을 포함하면, 페이지가 더 멋질 것이다.
 
-We can't use simple scoping here, since there are two different criteria.  The 
-search results must match +ford+, but the aggregation results must match +ford+
-AND +sold > now - 1M+.
-
 두 가지의 다른 기준이 있기 때문에, 여기에서 단순한 범위 지정을 사용할 수 없다. 
 검색 결과는 +ford+에 일치해야 한다. 그러나 집계 결과는 +ford+ 와 +sold > now - 1M+에 일치해야 한다.
 
-To solve this problem, we can use a special bucket called `filter`.((("filter bucket")))((("buckets", "filter")))  You specify
-a filter, and when documents match the filter's criteria, they are added to the
-bucket.
-
 이 이슈를 해결하기 위해, `filter`라 불리는 특별한 bucket을 사용할 수 있다.((("filter bucket")))((("buckets", "filter"))) 
 filter를 지정하면, document가 filter의 기준에 일치하는 경우, 그들은 bucket에 추가된다.
-
-Here is the resulting query:
 
 아래가 결과 query 이다.
 
@@ -114,15 +82,8 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/45_filtering.json
-<1> Using the `filter` bucket to apply a filter in addition to the `query` scope.
-<2> This `avg` metric will therefore average only docs that are both +ford+ and sold in the last month.
-
 <1> `filter`를 적용하기 위해, filter bucket을 사용한 것을 `query` 범위에 추가
 <2> 그러므로, `avg` metric은, +ford+이고, 지난 달에 팔린 자동차의 평균일 것이다.
-
-Since the `filter` bucket operates like any other bucket, you are free to nest
-other buckets and metrics inside.  All nested components will "inherit" the filter.
-This allows you to filter selective portions of the aggregation as required.
 
 `filter` bucket은 다른 bucket과 마찬가지로 동작하기 때문에, 다른 bucket이나 metric 내부에 중첩하는 것이 
 자유롭다. 모든 중첩된 요소는 filter를 `상속`한다. 이는 필요에 따라 aggregation의 선택적인 부분을 필터링할 수 있다는 것을 의미한다.
@@ -130,32 +91,13 @@ This allows you to filter selective portions of the aggregation as required.
 [float="true"]
 === Post Filter
 
-So far, we have a way to filter both the search results and aggregations (a
-`filtered` query), as well as filtering individual portions of the aggregation
-(`filter` bucket).
-
 이제, 검색 결과와 집계 양쪽 모두를 필터링(`filtered` query)하고, 집계의 개별 부분을 필터링 (`filtered` bucket)하는 방법을 알게 되었다(`filter` bucket).
-
-You may be thinking to yourself, "hmm...is there a way to filter _just_ the search
-results but not the aggregation?"((("filtering", "search results, not the aggregation")))((("post filter")))  The answer is to use a `post_filter`.
 
 "그럼, 집계가 아니라 단지 검색 결과만 필터링하는 방법이 있을까?"라는 생각이 들것이다.((("filtering", "search results, not the aggregation")))((("post filter"))) 
 정답은 `post_filter`를 사용하는 것이다.
 
-This is a top-level search-request element that accepts a filter.  The filter is
-applied _after_ the query has executed (hence the +post+ moniker: it runs
-_post query_ execution).  Because it operates after the query has executed,
-it does not affect the query scope--and thus does not affect the aggregations
-either.
-
 이것은 filter를 가지는, 최고 수준(top-level)의 검색 요청 요소이다. query가 실행된 _후에_, filter가 적용된다. (_query가 실행된 다음에_ 그것이 실행되기 때문에, +post+라는 이름으로 불린다.) 
 query가 실행된 후에 그것이 동작하기 때문에, query의 범위에 영향을 미치지 않는다. 따라서, aggregation에도 영향을 미치지 않는다.
-
-We can use this behavior to apply additional filters to our search
-criteria that don't affect things like categorical facets in your UI.  Let's 
-design another search page for our car dealer.  This page will allow the user
-to search for a car and filter by color.  Color choices are populated via an
-aggregation:
 
 UI의 카테고리 같은 것에 영향을 미치지 않고, 검색 기준에 추가 filter를 적용하여, 이 동작을 사용할 수 있다. 
 자동차 판매상을 위한 또 다른 검색 페이지를 계획해 보자. 이 페이지는 사용자가 자동차를 검색하고, 색상으로 필터링할 수 있다. 
@@ -183,46 +125,17 @@ GET /cars/transactions/_search?search_type=count
 }
 --------------------------------------------------
 // SENSE: 300_Aggregations/45_filtering.json
-<1> The `post_filter` element is a +top-level+ element and filters just the search hits.
-
 <1> `post_filter` 요소는 +최고 수준(top-level)+의 요소이고, 검색 hit만을 필터링한다.
-
-The `query` portion is finding all +ford+ cars.  We are then building a list of
-colors with a `terms` aggregation.  Because aggregations operate in the query
-scope, the list of colors will correspond with the colors that Ford cars are
-painted.
 
 `query` 부분은 +ford+ 자동차를 검색한다. 그 다음에 `terms` aggregation으로, 색상 목록을 만든다. 
 aggregation은 query 범위에서 동작하기 때문에, 색상 목록은 Ford 자동차에 칠해진 색상에 대응할 것이다.
 
-Finally, the `post_filter` will filter the search results to show only green
-+ford+ cars.  This happens _after_ the query is executed, so the aggregations
-are unaffected.
-
 마지막으로, `post_filter`는 녹색 +ford+ 자동차만을 보여주기 위해, 검색 결과를 필터링한다. 
 이것은 query가 실행된 _후에_ 발생한다. 따라서 aggregation에 영향을 미치지 않는다.
-
-This is often important for coherent UIs.  Imagine that a user clicks a category in 
-your UI (for example, green).  The expectation is that the search results are filtered,
-but _not_ the UI options.  If you applied a `filtered` query, the UI would
-instantly transform to show _only_ +green+ as an option--not what the user wants!
 
 이것은 종종 일관성 있는 UI에 있어 중요하다. 사용자가 UI에서 특정 카테고리(예: green)를 클릭한다고 가정해 보자. 
 기대하는 것은 검색 결과가 필터링 되는 것이지, UI의 옵션이 _아니다_. `filtered` query를 적용하면, UI는
  옵션인 +green+_만을_ 보여주기 위해, 즉시 바뀔 것이다. 사용자가 바라는 것이 아니다.
-
-[WARNING]
-.Performance consideration
-====
-Use a `post_filter` _only_ if you need to differentially filter search results 
-and aggregations. ((("post filter", "performance and")))Sometimes people will use `post_filter` for regular searches.
-
-Don't do this!  The nature of the `post_filter` means it runs _after_ the query,
-so any performance benefit of filtering (such as caches) is lost completely.
-
-The `post_filter` should be used only in combination with aggregations, and only
-when you need differential filtering.
-====
 
 [WARNING]
 .성능에 대한 고려
@@ -236,11 +149,6 @@ when you need differential filtering.
 
 [float="true"]
 === Recap
-
-Choosing the appropriate type of filtering--search hits, aggregations, or
-both--often boils down to how you want your user interface to behave.  Choose
-the appropriate filter (or combinations) depending on how you want to display
-results to your user.
 
 필터링의 적절한 type(검색 hits, 집계 또는 둘 모두)을 선택하는 것은, 종종 사용자 인터페이스가 동작하는 방법으로 요약된다. 사용자에게 결과를 보여줄 방법에 따라, 적절한 filter나 조합을 선택하자.
 
